@@ -1,0 +1,6 @@
+
+# temporary files and other junk
+*~
+*.bak
+.DS_Store
+

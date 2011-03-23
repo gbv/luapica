@@ -1,0 +1,18 @@
+lua-pica
+--------
+Lua library to handle PICA+ data
+
+Installation
+------------
+Copy the contents of the 'src' directory into a location on your LUA_PATH.
+
+Use
+---
+
+    require 'pica'
+
+
+Feedback and updates
+--------------------
+please visit https://github.com/nichtich/lua-pica
+
