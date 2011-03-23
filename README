@@ -11,6 +11,13 @@ Use
 
     require 'pica'
 
+    input = io.read("*all")
+    record = PicaRecord.parse( input )
+
+    eki = record.first('007G') -- get the first matching field or nil
+    if eki then
+        eki = eki['c']..eki['0'] -- get subfield values or ''
+    end
 
 Feedback and updates
 --------------------
