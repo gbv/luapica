@@ -1,0 +1,3 @@
+- add documentation (with LuaDoc?)
+- agree on API to access fields and subfields
+- add small conversion examples (probably with a 'main' function)
