@@ -32,6 +32,9 @@ function TestField:testNew()
     assertEquals( f.occ, '01' )
     assertEquals( f:fulltag(), '028C/01' )
     assertEquals( tostring(f), '028C/01' )
+
+    f = PicaField.new('028C/02' )
+    assertEquals( f:fulltag(), '028C/02' )
 end
 
 function TestField:testAppend()
@@ -89,14 +92,39 @@ end
 TestRecord = {}
 
 function TestRecord:testNew()
-    local r = PicaRecord.new()
+    local f,r = nil,PicaRecord.new()
     
     r = PicaRecord.parse("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
 
-    local f = r:first("028A")
+    f = r:first("028A")
+    assertEquals( f.tag, "028A" )
+    assertEquals( r[1], f ) -- get by position
+
+    f = r:first("029A")
+    assertEquals( f.tag, '' )
+
+    f = r["028A"] -- get first field
     assertEquals( f.tag, "028A" )
 
-    local f = r:first("029A")
-    assertEquals( f, nil )
+    f = r:first("028C/01")
+    assertEquals( f.tag, "028C" )
+    assertEquals( f.occ, "01" )
 
+    f = r["028C/01"]
+    assertEquals( f.tag, "028C" )
+
+    -- any occurence (required)
+    f = r["028C/00"]
+    assertEquals( f.tag, "028C" )
+
+    -- optional any occurence
+    f = r["028C"]
+    assertEquals( f.tag, "028C" )
+
+    -- no occurrence
+    f = r["028C/"]
+    assertEquals( f.tag, "" )
+
+    f = r["028A/"]
+    assertEquals( f.tag, "028A" )
 end
