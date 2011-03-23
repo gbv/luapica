@@ -11,13 +11,19 @@ Use
 
     require 'pica'
 
+    -- parses a PICA+ record
     input = io.read("*all")
     record = PicaRecord.parse( input )
 
-    eki = record.first('007G') -- get the first matching field or nil
-    if eki then
+    -- get the first matching field
+    eki = record.first('007G')   -- alternatively: record["007G"]
+    if eki.tag then
         eki = eki['c']..eki['0'] -- get subfield values or ''
     end
+
+    -- directly get a subfield value (or the empty string)
+    year = record.first('001@','a')
+
 
 Feedback and updates
 --------------------
