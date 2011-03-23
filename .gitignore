@@ -1,3 +1,5 @@
+# documentation ($ make doc)
+doc
 
 # temporary files and other junk
 *~

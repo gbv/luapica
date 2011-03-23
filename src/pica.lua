@@ -1,8 +1,9 @@
---[[ 
-lua-pica
-]]
+-----------------------------------------------------------------------------
+-- lua-pica
+-----------------------------------------------------------------------------
+-- module "pica" -- TODO
 
--- Stores an ordered list of PICA+ subfields
+--- Stores an ordered list of PICA+ subfields
 PicaField = { }
 PicaField.__index = PicaField
 
@@ -17,6 +18,10 @@ PicaField.__index = function (sf,key)
     end
 end
 
+--- Creates a new PICA+ field.
+-- The newly created field will be empty.
+-- @param tag tag (optional)
+-- @param occ occurence indicator (optional)
 function PicaField.new( tag, occ )
     local sf = { 
         tag = tag or '', 
@@ -27,13 +32,17 @@ function PicaField.new( tag, occ )
     return sf
 end
 
+--- Creates a new PICA+ field by parsing a line of PICA+ format.
+-- On failure an empty PicaField object is returned.
+-- @usage <tt>field = PicaField:parse(str)</tt>
+-- @param line
 function PicaField.parse( line )
 
     _, _, tag, occ, data
         = string.find(line,"^([0-9][0-9][0-9][A-Z@])(%S*)%s($[^$].+)$")
 
     if tag == nil then 
-        return nil 
+        return PicaField.new()
     end    
 
     if string.find(occ,'^/([0-9][0-9])$') then
