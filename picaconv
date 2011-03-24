@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# get absolute path of this script
+MYDIR=$(cd `dirname $0` && pwd)
+
+# set LUA_PATH to find pica.lua and conversion scripts
+export LUA_PATH=$MYDIR/src/\?.lua\;$MYDIR/scripts/\?.lua
+
+# run 'picaconv.lua'
+lua $MYDIR/src/picaconv.lua $@
