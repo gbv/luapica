@@ -8,15 +8,31 @@
 PicaField = { }
 PicaField.__index = PicaField
 
--- you can access the first subfield values via its code
+--- Access properties of a PICA+ field
+-- You can access the first subfield values via its code
 -- if it does not exists, the empty string is returned.
-PicaField.__index = function (sf,key)
-    if ( key:match('^[a-z0-9]$')  ) then
-        -- return the first value
-        return sf:first(key)
+-- @usage <tt>field.ok</tt> returns whether the field is empty<br>
+-- <tt>field.a</tt> returns the first subfield value <tt>a</tt>
+PicaField.__index = function (field,key)
+    if ( type(key) == 'number' ) then
+        -- return the nth subfield value
+        local f = field[key]
+        return f
+    elseif ( key:match('^[a-z0-9]$')  ) then
+        -- return the first subfield value of the given code
+        return field:first(key)
+    elseif key == 'ok' then
+        -- return whether the field is not empty
+        return field.tag ~= "" and field.size > 0
     else
         return PicaField[key]
     end
+end
+
+--- Returns the length of the field, that is the number of subfields.
+-- @usage <tt>#field</tt>
+PicaField.__len = function (field)
+    return field.size
 end
 
 --- Creates a new PICA+ field.
@@ -101,7 +117,20 @@ function PicaField:append( code, value )
     end
     self.size = self.size + 1
     self.subfields[code][ self.size ] = value
+    self[ self.size ] = value
 end
+
+--[[
+--- Returns whether the field is not empty.
+function PicaField:ok()
+    return self.tag ~= "" and self.size > 0
+end
+
+--- Returns whether the field is empty.
+function PicaField:empty()
+    return self.tag == "" or self.size == 0
+end
+--]]
 
 
 --- Returns the first value of a given subfield or an empty string.
@@ -209,7 +238,6 @@ end
 
 --- Appends a field to the record.
 function PicaRecord:append( field )
-    --print(dump(field))
     table.insert( self, field )
 
     if not self.fields[ field.tag ] then
@@ -225,6 +253,7 @@ function PicaRecord:all( field )
     end
     return list
 end
+
 
 --- Returns the first matching field or subfield value
 -- @param field locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt>

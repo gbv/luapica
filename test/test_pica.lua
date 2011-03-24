@@ -68,8 +68,66 @@ function TestField:testAppend()
     -- short syntax
     assertEquals( f['b'] , '$' )
     assertEquals( f['a'] , 'foo' )
+
+    assertEquals( f.b , '$' )
+    f:append( "1", "zz" )
+
+    assertEquals( f['1'] , 'zz' )
+    assertEquals( f[1] , 'foo' )
+
 end
 
+function TestField:testLen()
+    local f = PicaField.new()
+    assertEquals( #f, 0 )
+
+    f:append( 'x','abc')
+    assertEquals( #f, 1 )
+   
+    f:append( '1','x')
+    assertEquals( #f, 2 )
+end
+
+function TestField:testIter()
+    local f = PicaField.new()
+    local list = {
+        {"x","abc"},
+        {"z","xx"},
+        {"0","1"},
+        {"z","yy"}
+    }
+    local k,v
+    for k,v in ipairs(list) do
+        f:append( v[1], v[2] )
+    end
+    for k,v in ipairs(f) do
+        assertEquals( v, list[k][2] )
+    end
+
+    --[[
+  --iterate with pairs over subfield (key/value)
+    --for k,v in pairs(f.subfields) do
+-- .sf shoul returns an iterator over code/value pairs
+-- .val(...)
+-- .first(...)
+-- .iter / .all / .sf ( function(code,value) end ) 
+    for k,v in f.iter() do
+        print(k,".",v,"\n")
+    end
+    --]]
+end
+
+function TestField:testOk()
+    local f = PicaField.new()
+    f:append( 'x','abc')
+    assertEquals( f.ok, false )
+
+    f = PicaField.new('123A')
+    assertEquals( f.ok, false )
+
+    f:append( 'x','abc')
+    assertEquals( f.ok, true )
+end
 
 function TestField:testParsing()
 

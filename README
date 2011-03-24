@@ -16,8 +16,8 @@ Use
     record = PicaRecord.parse( input )
 
     -- get the first matching field
-    eki = record.first('007G')   -- alternatively: record["007G"]
-    if eki.tag then
+    eki = record:first('007G')   -- alternatively: record["007G"]
+    if eki.ok then
         eki = eki['c']..eki['0'] -- get subfield values or ''
     end
 
