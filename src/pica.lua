@@ -141,6 +141,11 @@ function PicaField:first( code )
     return values[1] or ""
 end
 
+function PicaField:all( code )
+    local values = self:values(code)
+    return values
+end
+
 --- Returns a list of subfield values.
 function PicaField:values( code )
     local values = { }
@@ -246,37 +251,13 @@ function PicaRecord:append( field )
     table.insert( self.fields[ field.tag ], field )
 end
 
-function PicaRecord:all( field )
-    local list = { }
-    if self.fields[field] then
-        list = self.fields[field]
-    end
-    return list
-end
+--- Parses a field locator into tag and occurrence.
+-- see PicaRecord:first and PicaRecord:all for examples
+function PicaRecord.parse_field_locator( field )
 
-
---- Returns the first matching field or subfield value
--- @param field locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt>
---        or <tt>AAAA/BB</tt> or <tt>AAAA/00</tt>)
--- @usage <tt>rec["028A/"]</tt> returns field 028A,
---        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
---        <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A,
---        <tt>rec["028A/01"]</tt> returns field 028A/01
-function PicaRecord:first( field, subfield )
-    local tag
-    -- TODO: /00
-
-    local dummy = function()
-        if subfield == nil then
-            return PicaField.new()
-        else
-            return ''
-        end
-    end
-    
     _,_,tag,occ = field:find('^(%d%d%d[A-Z@])(.*)')
     if not tag or (occ ~= "" and not occ:find('^/%d*$')) then
-        return dummy()
+        return
     end 
 
     if occ == "" then
@@ -287,6 +268,56 @@ function PicaRecord:first( field, subfield )
        _,_,occ = occ:find('^/(%d*)$')
     end
 
+    return tag, occ
+end
+
+-- TODO: support field locators as in :first
+function PicaRecord:all( field, subfield )
+    local list = { }
+
+    local tag, occ = self.parse_field_locator( field )
+
+    if tag == nil or self.fields[ tag ] == nil then
+        return list
+    end
+
+    if subfield then
+        for n,f in pairs( self.fields[field] ) do
+            local values = f:all(subfield)
+            for m,v in pairs( values ) do
+                table.insert( list, v )
+            end
+        end
+    else -- return all fields. TODO: check occ!
+        list = self.fields[field]
+    end
+
+    return list
+end
+
+--- Returns the first matching field or subfield value
+-- @param field locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt>
+--        or <tt>AAAA/BB</tt> or <tt>AAAA/00</tt>)
+-- @usage <tt>rec["028A/"]</tt> returns field 028A,
+--        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
+--        <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A,
+--        <tt>rec["028A/01"]</tt> returns field 028A/01
+function PicaRecord:first( field, subfield )
+    -- local tag
+    -- TODO: /00
+
+    local dummy = function()
+        if subfield == nil then
+            return PicaField.new()
+        else
+            return ''
+        end
+    end
+    
+    local tag, occ = self.parse_field_locator( field )
+    if not tag then
+        return dummy()
+    end
 
     field = self.fields[ tag ]
     if field == nil then
