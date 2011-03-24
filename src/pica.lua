@@ -1,10 +1,19 @@
 -----------------------------------------------------------------------------
--- lua-pica
+-- Handle PICA+ data in Lua
+--
+-- @class module
+-- @name pica
 -----------------------------------------------------------------------------
--- module "pica" -- TODO
+-- module "pica" -- deprecated. TODO: Tell LuaDoc to treat this as a module.
 
+-----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields
--- @class
+-- @class table
+-- @name PicaField
+-- @field ok boolean value, indicating whether the field is non-empty
+-- @field x  subfield value for subfield code <tt>x</tt> or the empty string
+-- @field n  nth subfield
+-----------------------------------------------------------------------------
 PicaField = { }
 PicaField.__index = PicaField
 
@@ -208,7 +217,10 @@ function PicaField:__tostring()
     end
 end
 
-
+--- A PICA+ record.
+-- @class table
+-- @
+----
 PicaRecord = {}
 PicaRecord.__index = PicaRecord
 

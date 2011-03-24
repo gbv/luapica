@@ -1,3 +1,3 @@
-- add documentation (with LuaDoc?)
+- fix LuaDoc (https://github.com/keplerproject/luadoc)
 - agree on API to access fields and subfields
 - add small conversion examples (probably with a 'main' function)

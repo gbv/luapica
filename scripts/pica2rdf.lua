@@ -141,7 +141,8 @@ function main(s)
     --      local _,_,n = v:find('(%d%d\.%d%d)')
     --      if n then return n end
     --)
-    --  record:all('045Q','8', re('(%d%d\.%d%d)') )
+    -- or with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html 
+    --  record:all('045Q','8', re.compile('(%d%d\.%d%d)') )
     local bklinks = record:all('045Q','8')
     for k,bk in pairs(bklinks) do
         _,_,notation = bk:find('(%d%d\.%d%d)')
