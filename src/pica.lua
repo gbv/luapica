@@ -1,21 +1,32 @@
 -----------------------------------------------------------------------------
--- Handle PICA+ data in Lua
---
+--- Handle PICA+ data in Lua.
+-- This module provides two classes (<a href="#PicaField">PicaField</a> and
+-- <a href="#PicaRecord">PicaRecord</a>) for PICA+ data. The programming 
+-- interface of these classes is optimized for easy access and conversion
+-- of PICA+ records.
+-- 
 -- @class module
 -- @name pica
+-- @see PicaField
+-- @see PicaRecord
 -----------------------------------------------------------------------------
--- module "pica" -- deprecated. TODO: Tell LuaDoc to treat this as a module.
 
 -----------------------------------------------------------------------------
---- Stores an ordered list of PICA+ subfields
+--- Stores an ordered list of PICA+ subfields.
+-- This class overloads the following operators: <tt>#</tt>, <tt>%</tt>.
 -- @class table
 -- @name PicaField
+-- @field x subfield value for subfield code <tt>x</tt> or 
+--        the empty string.
+-- @field n the <em>n</em>th subfield
 -- @field ok boolean value, indicating whether the field is non-empty
--- @field x  subfield value for subfield code <tt>x</tt> or the empty string
--- @field n  nth subfield
 -----------------------------------------------------------------------------
-PicaField = { }
-PicaField.__index = PicaField
+PicaField = {
+    -- field % subfield
+    __mod = function(field,subfield)
+        return field:has( subfield )
+    end
+}
 
 --- Access properties of a PICA+ field
 -- You can access the first subfield values via its code
@@ -155,6 +166,15 @@ function PicaField:all( code )
     return values
 end
 
+--- Checks whether a field contains a given subfield.
+-- @param subfield subfield code (one of <tt>a-z</tt> or <tt>0-9</tt>)
+-- @usage <tt>f:has("x")</tt> or <tt>f % "x"</tt>
+-- @return boolean result of <tt>(self:first( subfield ) ~= "")</tt>
+function PicaField:has( subfield )
+    return (self:first( subfield ) ~= "")
+end
+
+
 --- Returns a list of subfield values.
 function PicaField:values( code )
     local values = { }
@@ -217,12 +237,14 @@ function PicaField:__tostring()
     end
 end
 
---- A PICA+ record.
+-----------------------------------------------------------------------------
+--- Stores a PICA+ record.
+-- Basically a PicaRecord is a list of PICA+ fields
+-- This class overloads the following operators: <tt>#</tt>, <tt>%</tt>.
 -- @class table
--- @
-----
+-- @name PicaRecord
+-----------------------------------------------------------------------------
 PicaRecord = {}
-PicaRecord.__index = PicaRecord
 
 --- Access a field or field value.
 -- <tt>rec[n]</tt> returns th nth field if n is a number

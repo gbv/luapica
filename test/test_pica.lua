@@ -77,6 +77,16 @@ function TestField:testAppend()
 
 end
 
+function TestField:testHas()
+    local f = PicaField.new()
+    assertEquals( f:has("x"), false )
+    assertEquals( f % "x", false )
+    f:append('a','foo')
+    f:append('x','bar')
+    assertEquals( f:has("x"), true )
+    assertEquals( f % "x", true )
+end
+
 function TestField:testLen()
     local f = PicaField.new()
     assertEquals( #f, 0 )

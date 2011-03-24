@@ -114,22 +114,9 @@ end
 
 
 -------------------------------------------------------------------------------
---- Main conversion
-function main(s)
-    record = PicaRecord.parse( s )
-
-    eki = record:first('007G')
-    if eki then
-        eki = eki['c']..eki['0']
-    end
-    if (not eki) then
-        return "# EKI not found"
-    end
-
-    local ttl = Turtle.new( "info/eki:"..eki )
-
+function bibrecord(record, ttl)
+    -- TODO: nicht für Normdaten!
     ttl:addlink('a','dct:BibliographicResource')
-    ttl:add( "dc:identifier", eki )
 
     ttl:add( "dc:title", record:first('021A','a') )
     ttl:add( "dct:issued", record:first('011@','a') )
@@ -153,7 +140,53 @@ function main(s)
 
     -- 041A $Ss$9491359985$8Ubuntu <Programm> ; SWD-ID: 48334261
     -- 041A/01 $Ss$9105105368$8Server ; SWD-ID: 42093247
+end
 
+function  authorityrecord(record,ttl)
+    -- TODO
+end
+
+-------------------------------------------------------------------------------
+--- Main conversion
+function main(s)
+    record = PicaRecord.parse( s )
+
+    local ttl
+
+    local type = record:first('002@','0')
+    if not type then
+        return "# Type not found"
+    end
+
+    local err
+
+    if type:find('^[ABCEGHKMOSVZ]') then
+        local eki = record:first('007G')
+        eki = eki['c']..eki['0']
+        if eki == "" then
+            return "# EKI not found"
+        end
+        ttl = Turtle.new( "info/eki:"..eki )
+
+        ttl:add( "dc:identifier", eki )
+
+        err = bibrecord(record,ttl)
+    elseif type:find('^Tp') then -- Person
+        local pnd = record:first('007S','0')
+        if pnd == "" then
+            err = "# Missing PND"
+        else 
+            ttl = Turtle.new( "http://d-nb.info/gnd/" .. pnd )
+            ttl:add( "dc:identifier", pnd )
+            err = authorityrecord(record, ttl)
+        end
+    end
+
+    if not ttl then
+        err = "# Unknown record type"
+    end
+
+    if err then return err end
     return tostring(ttl)
 end
 
