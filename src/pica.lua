@@ -13,47 +13,76 @@
 
 -----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields.
--- This class overloads the following operators: <tt>#</tt>, <tt>%</tt>.
+-- This class overloads the following operators: 
+-- <ul>
+--   <li><tt>#f</tt> returns the number of subfields.</li>
+--   <li><tt>f % p</tt> returns whether pattern <tt>p</tt> applies to field 
+--       <tt>f</tt> (see <a href="#PicaField:has">PicaField:has</a>).
+-- </ul>
 -- @class table
 -- @name PicaField
--- @field x subfield value for subfield code <tt>x</tt> or 
---        the empty string.
--- @field n the <em>n</em>th subfield
--- @field ok boolean value, indicating whether the field is non-empty
+-- @field x returns the first subfield value of subfield code <tt>x</tt> or 
+--        the empty string (see <a href="#PicaField:has">PicaField:first</a>).
+-- @field n returns the <em>n</em>th subfield
+-- @field ok returns whether the field has a tag and is not empty
+-- @field empty returns whether the field has no subfields (<tt>#f == 0</tt>)
 -----------------------------------------------------------------------------
 PicaField = {
+
+    -- # field
+    __len = function (field)
+        return field.size
+    end,
+
     -- field % subfield
     __mod = function(field,subfield)
         return field:has( subfield )
-    end
+    end,
+
+    -- field[ key ]
+    -- field.key
+    __index = function (field,key)
+        if ( type(key) == 'number' ) then -- n'th value 
+            return field[key]
+        elseif ( key:match('^[a-z0-9]$')  ) then -- first matching value
+            return field:first(key)
+        elseif key == 'empty' then
+            return field.size == 0
+        elseif key == 'full' then
+            return field:get_full()
+        elseif key == 'str' then
+            return tostring(field)
+        elseif key == 'ok' then
+            return field.tag ~= "" and field.size > 0
+        else
+            return PicaField[key]
+        end
+        -- rawget?
+    end,
+
+    -- field[ key ] = value    
+    -- field.key = value    
+    __newindex = function(field, key, value)
+        -- TODO:
+        --- field.x = "foo"
+        --- field.tag / . fulltag / .occ
+        rawset(field,key,value)
+    end,
+
 }
 
---- Access properties of a PICA+ field
--- You can access the first subfield values via its code
--- if it does not exists, the empty string is returned.
--- @usage <tt>field.ok</tt> returns whether the field is empty<br>
--- <tt>field.a</tt> returns the first subfield value <tt>a</tt>
-PicaField.__index = function (field,key)
-    if ( type(key) == 'number' ) then
-        -- return the nth subfield value
-        local f = field[key]
-        return f
-    elseif ( key:match('^[a-z0-9]$')  ) then
-        -- return the first subfield value of the given code
-        return field:first(key)
-    elseif key == 'ok' then
-        -- return whether the field is not empty
-        return field.tag ~= "" and field.size > 0
+-- implements 'field.full'
+function PicaField:get_full()
+    if self.tag == "" then
+        return ""
+    end
+    if self.occ == "" then
+        return self.tag
     else
-        return PicaField[key]
+        return self.tag .. '/' .. self.occ
     end
 end
 
---- Returns the length of the field, that is the number of subfields.
--- @usage <tt>#field</tt>
-PicaField.__len = function (field)
-    return field.size
-end
 
 --- Creates a new PICA+ field.
 -- The newly created field will have no subfields. The optional occurence 
@@ -99,10 +128,10 @@ end
 -- @param line
 function PicaField.parse( line )
 
-    _, _, fulltag, data
+    _, _, full, data
         = string.find(line,"^([^%s$]+)%s*($[^$].+)$")
 
-    local field = PicaField.new(fulltag)
+    local field = PicaField.new(full)
     if not field.tag then return field end
 
     -- parse subfields
@@ -140,19 +169,6 @@ function PicaField:append( code, value )
     self[ self.size ] = value
 end
 
---[[
---- Returns whether the field is not empty.
-function PicaField:ok()
-    return self.tag ~= "" and self.size > 0
-end
-
---- Returns whether the field is empty.
-function PicaField:empty()
-    return self.tag == "" or self.size == 0
-end
---]]
-
-
 --- Returns the first value of a given subfield or an empty string.
 -- @param code a subfield code
 function PicaField:first( code )
@@ -161,6 +177,7 @@ function PicaField:first( code )
     return values[1] or ""
 end
 
+--- Returns a list of all matching values
 function PicaField:all( code )
     local values = self:values(code)
     return values
@@ -170,8 +187,8 @@ end
 -- @param subfield subfield code (one of <tt>a-z</tt> or <tt>0-9</tt>)
 -- @usage <tt>f:has("x")</tt> or <tt>f % "x"</tt>
 -- @return boolean result of <tt>(self:first( subfield ) ~= "")</tt>
-function PicaField:has( subfield )
-    return (self:first( subfield ) ~= "")
+function PicaField:has(...)
+    return (self:first(...) ~= "")
 end
 
 
@@ -207,21 +224,9 @@ function PicaField:list()
     return list
 end
 
--- Returns tag and occurence indicator as string.
-function PicaField:fulltag()
-    if self.tag == "" then
-        return ""
-    end
-    if self.occ == "" then
-        return self.tag
-    else
-        return self.tag .. '/' .. self.occ
-    end
-end
-
 -- returns the whole field as string in readable PICA+ format.
 function PicaField:__tostring()
-    local t,s = self:fulltag(),"";
+    local t,s = self.full,"";
 
     for pos,sf in pairs(self:list()) do
         for code, value in pairs(sf) do

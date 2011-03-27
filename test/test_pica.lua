@@ -24,17 +24,17 @@ function TestField:testNew()
 
     f = PicaField.new('021A')
     assertEquals( f.tag, '021A' )
-    assertEquals( f:fulltag(), '021A' )
+    assertEquals( f.full, '021A' )
     assertEquals( tostring(f), '021A' )
 
     f = PicaField.new('028C','01')
     assertEquals( f.tag, '028C' )
     assertEquals( f.occ, '01' )
-    assertEquals( f:fulltag(), '028C/01' )
+    assertEquals( f.full, '028C/01' )
     assertEquals( tostring(f), '028C/01' )
 
     f = PicaField.new('028C/02' )
-    assertEquals( f:fulltag(), '028C/02' )
+    assertEquals( f.full, '028C/02' )
 end
 
 function TestField:testAppend()
@@ -127,16 +127,20 @@ function TestField:testIter()
     --]]
 end
 
-function TestField:testOk()
+function TestField:testOkAndEmpty()
     local f = PicaField.new()
+    assertEquals( f.empty, true )
     f:append( 'x','abc')
     assertEquals( f.ok, false )
+    assertEquals( f.empty, false )
 
     f = PicaField.new('123A')
     assertEquals( f.ok, false )
+    assertEquals( f.empty, true )
 
     f:append( 'x','abc')
     assertEquals( f.ok, true )
+    assertEquals( f.empty, false )
 end
 
 function TestField:testParsing()
@@ -146,11 +150,11 @@ function TestField:testParsing()
     }
     --fields['028A $dgiven1$dgiven2$asurname'] = {'028A',''}
     
-    for line,fulltag in pairs(fields) do
+    for line,full in pairs(fields) do
         local field = PicaField.parse(line)
 
-        assertEquals( field.tag, fulltag[1] )
-        assertEquals( field.occ, fulltag[2] )
+        assertEquals( field.tag, full[1] )
+        assertEquals( field.occ, full[2] )
         assertEquals( tostring(field), line )
     end
 
