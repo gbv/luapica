@@ -1,10 +1,11 @@
 -----------------------------------------------------------------------------
---- Handle PICA+ data in Lua.
+-- Handle PICA+ data in Lua.
 -- This module provides two classes (<a href="#PicaField">PicaField</a> and
 -- <a href="#PicaRecord">PicaRecord</a>) for PICA+ data. The programming 
 -- interface of these classes is optimized for easy access and conversion
--- of PICA+ records.
+-- of PICA+ records. Have a look at the file 'example.lua' for a synopsis.
 -- 
+-- @author Jakob Voss <voss@gbv.de>
 -- @class module
 -- @name pica
 -- @see PicaField

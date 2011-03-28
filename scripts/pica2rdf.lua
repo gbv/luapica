@@ -1,6 +1,7 @@
 -------------------------------------------------------------------------------
---- Experimental demo conversion from PICA+ to RDF/Turtle
--- @file
+-- Experimental demo conversion from PICA+ to RDF/Turtle.
+--
+-- @author Jakob Voss <voss@gbv.de>
 -------------------------------------------------------------------------------
 
 require 'pica'
@@ -8,6 +9,7 @@ require 'pica'
 -------------------------------------------------------------------------------
 --- Simple turtle serializer.
 -- Stores multiple RDF statements with the same subject.
+-- 
 -- @class table
 -- @name Turtle
 -------------------------------------------------------------------------------
@@ -37,6 +39,8 @@ Turtle = {
     -- # ttl   returns the number of triples
 }
 
+--- Creates a new Turtle serializer.
+-- @param subject the subject for all triples
 function Turtle.new( subject )
     local tt = {
         subject = subject,

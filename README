@@ -46,6 +46,20 @@ use all conversion scripts in the 'scripts' directory like this:
 
     $ picaconv <script> <picafile>
 
+API Documentation
+-----------------
+You can generate the API documentation with LuaDoc. However, LuaDoc has
+not been updated since years. I added some patches, so you get get a
+fixed version of LuaDoc at https://github.com/nichtich/luadoc.
+
+    $ git clone git://github.com/nichtich/luadoc.git
+    $ cd luadoc
+    $ make install
+
+You can then generate documentation with:
+
+    $ make doc 
+
 Feedback and updates
 --------------------
 please visit https://github.com/nichtich/lua-pica

@@ -1,3 +1,4 @@
+
     require 'pica'
 
     r = io.read("*all")           -- read from standard input
