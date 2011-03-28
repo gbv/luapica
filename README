@@ -4,7 +4,7 @@ Lua library to handle PICA+ data
 
 Installation
 ------------
-Copy the contents of the 'src' directory (at least 'pica.lua') into a 
+Copy the contents of the 'lib' directory (at least 'pica.lua') into a 
 location on your LUA_PATH.
 
 Synopsis
@@ -38,7 +38,7 @@ The following script ('example.lua') shows how to use the library:
 
 Examples
 --------
-The file 'src/picaconv.lua' contains a command line script to convert
+The file 'lib/picaconv.lua' contains a command line script to convert
 PICA+ records. The first command line argument must be a concrete lua 
 conversion script somewhere where lua can find it. The shell script 
 'picaconv' sets the LUA_PATH variable for this purpose, so you can you

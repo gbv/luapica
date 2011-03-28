@@ -4,7 +4,7 @@
 MYDIR=$(cd `dirname $0` && pwd)
 
 # set LUA_PATH to find pica.lua and conversion scripts
-export LUA_PATH=$MYDIR/src/\?.lua\;$MYDIR/scripts/\?.lua
+export LUA_PATH=$MYDIR/lib/\?.lua\;$MYDIR/scripts/\?.lua
 
 # run 'picaconv.lua'
-lua $MYDIR/src/picaconv.lua $@
+lua $MYDIR/lib/picaconv.lua $@
