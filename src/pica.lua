@@ -16,16 +16,18 @@
 -- This class overloads the following operators: 
 -- <ul>
 --   <li><tt>#f</tt> returns the number of subfields.</li>
---   <li><tt>f % p</tt> returns whether pattern <tt>p</tt> applies to field 
+--   <li><tt>f % l</tt> returns whether locator <tt>l</tt> applies to field 
 --       <tt>f</tt> (see <a href="#PicaField:has">PicaField:has</a>).
 -- </ul>
--- @class table
--- @name PicaField
--- @field x returns the first subfield value of subfield code <tt>x</tt> or 
---        the empty string (see <a href="#PicaField:has">PicaField:first</a>).
--- @field n returns the <em>n</em>th subfield
+-- @field n (number) the <i>n</i>th subfield value or <tt>nil</tt>
+-- @field c (string) the <i>first</i> subfield value of a subfield with code
+--   <i>c</i> where <i>c</i> can be a letter (<tt>a-z</tt> or <tt>A-Z</tt>) 
+--   or a digit (<tt>0-9</tt>). An empty string is returned if no such 
+--   subfields exists (see <a href="#PicaField:has">PicaField:first</a>).
 -- @field ok returns whether the field has a tag and is not empty
 -- @field empty returns whether the field has no subfields (<tt>#f == 0</tt>)
+-- @class table
+-- @name PicaField
 -----------------------------------------------------------------------------
 PicaField = {
 
@@ -39,12 +41,12 @@ PicaField = {
         return field:has( subfield )
     end,
 
-    -- field[ key ]
+    -- field[ key ]  
     -- field.key
     __index = function (field,key)
         if ( type(key) == 'number' ) then -- n'th value 
             return field[key]
-        elseif ( key:match('^[a-z0-9]$')  ) then -- first matching value
+        elseif ( key:match('^[a-zA-Z0-9]$')  ) then -- first matching value
             return field:first(key)
         elseif key == 'empty' then
             return field.size == 0
@@ -160,7 +162,7 @@ end
 --        (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>)
 -- @param value subfield value. Must be a non-empty string.
 function PicaField:append( code, value )
-    -- TODO: validate
+    -- TODO: validate code (A-Z, a-z, 0-9)
     if not self.subfields[code] then
         self.subfields[code] = { }
     end
@@ -184,7 +186,8 @@ function PicaField:all( code )
 end
 
 --- Checks whether a field contains a given subfield.
--- @param subfield subfield code (one of <tt>a-z</tt> or <tt>0-9</tt>)
+-- @param ... subfield code (one character of <tt>a-z</tt>, 
+--   <tt>A-Z</tt> or <tt>0-9</tt>)
 -- @usage <tt>f:has("x")</tt> or <tt>f % "x"</tt>
 -- @return boolean result of <tt>(self:first( subfield ) ~= "")</tt>
 function PicaField:has(...)
@@ -245,38 +248,70 @@ end
 -----------------------------------------------------------------------------
 --- Stores a PICA+ record.
 -- Basically a PicaRecord is a list of PICA+ fields
--- This class overloads the following operators: <tt>#</tt>, <tt>%</tt>.
+-- This class overloads the following operators: 
+-- <ul>
+--   <li><tt>#r</tt> returns the number of fields.</li>
+--   <li><tt>r % l</tt> returns whether locator <tt>p</tt> matches
+--       <tt>r</tt> (see <a href="#PicaRecord:has">PicaRecord:has</a>).
+-- </ul>
+-- @field n (number) the <i>n</i>th field
+-- @field locator (string) the first matching field or value
+--   (see <a href="#PicaRecord:first">PicaRecord:first</a>)
 -- @class table
 -- @name PicaRecord
 -----------------------------------------------------------------------------
-PicaRecord = {}
+PicaRecord = {
 
---- Access a field or field value.
--- <tt>rec[n]</tt> returns th nth field if n is a number
--- or the first field/value if n is a locator
-PicaRecord.__index = function (record,key)
-    if type(key) == "number" then
-       return record[key]
-    elseif key:match('^%d%d%d[A-Z@]') then
-       return record:first(key) 
-    else
-        return PicaRecord[key]
-    end
-end
+    -- #record
+    __len = function (record)
+        return record.size
+    end,
 
-function PicaRecord.new()
+    -- field % locator
+    __mod = function (record,locator)
+        return record:has( locator )
+    end,
+
+    -- record[ key ]  
+    -- record.key
+    __index = function (record,key)
+    	if type(key) == "number" then
+            return record[key]
+        elseif key:match('^%d%d%d[A-Z@]') then
+            -- TODO: record:get( key ) ?
+            return record:first(key) 
+        else
+            return PicaRecord[key]
+        end
+    end,
+
+    -- tostring( record )
+    __tostring = function (record)
+        local s,f,i = {},nil,nil
+        for i,f in ipairs(record) do
+            s[i] = tostring(f) 
+        end
+        return table.concat(s,"\n")
+    end,
+}
+
+--- Creates a new PICA+ record.
+-- If you provide a string, it will be parsed as PICA+ format.
+-- @param str (optional string) string to parse
+function PicaRecord.new( str )
     local record = { fields = { } }
     setmetatable(record,PicaRecord)
-    return record
-end
-
-function PicaRecord.parse( string )
-    local record = PicaRecord.new()
-    string:gsub("[^\r\n]+", function(line)
-    -- print(line,"\n")
-        local field = PicaField.parse(line)
-        record:append( field )
-    end)
+    if str == nil then
+        return record
+    elseif type(str) == "string" then
+        str:gsub("[^\r\n]+", function(line)
+        -- print(line,"\n")
+            local field = PicaField.parse(line)
+            record:append( field )
+        end)
+    else
+        error('can only parse string, got '..type(str))
+    end
     return record
 end
 
@@ -294,7 +329,7 @@ end
 -- see PicaRecord:first and PicaRecord:all for examples
 function PicaRecord.parse_field_locator( field )
 
-    _,_,tag,occ = field:find('^(%d%d%d[A-Z@])(.*)')
+    _,_,tag,occ = string.find(field,'^(%d%d%d[A-Z@])(.*)')
     if not tag or (occ ~= "" and not occ:find('^/%d*$')) then
         return
     end 
@@ -310,6 +345,8 @@ function PicaRecord.parse_field_locator( field )
     return tag, occ
 end
 
+--- Returns all matching values
+-- @return table
 -- TODO: support field locators as in :first
 function PicaRecord:all( field, subfield )
     local list = { }
@@ -320,15 +357,30 @@ function PicaRecord:all( field, subfield )
         return list
     end
 
-    if subfield then
-        for n,f in pairs( self.fields[field] ) do
-            local values = f:all(subfield)
-            for m,v in pairs( values ) do
-                table.insert( list, v )
+    local check_occ = function(f)
+        return occ == '*' or occ == f.occ or (occ == '00' and f.occ ~= '')
+    end
+
+    local fl = self.fields[ tag ]
+    if not fl then
+        return { }
+    elseif subfield then
+        for n,f in pairs( fl ) do
+            if check_occ(f) then
+                local values = f:all(subfield)
+                for m,v in pairs( values ) do
+                    table.insert( list, v )
+                end
             end
         end
-    else -- return all fields. TODO: check occ!
-        list = self.fields[field]
+    else 
+        -- TODO: test this and maybe it should better return a Picarecord?
+        local f
+        for _,f in ipairs( fl ) do
+            if check_occ(f) then
+                table.insert( list, f )
+            end
+        end
     end
 
     return list
@@ -337,7 +389,7 @@ end
 --- Returns the first matching field or subfield value
 -- @param field locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt>
 --        or <tt>AAAA/BB</tt> or <tt>AAAA/00</tt>)
--- @usage <tt>rec["028A/"]</tt> returns field 028A,
+-- @usage <tt>rec["028A/"]</tt> returns field 028A but not 028A/xx,
 --        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
 --        <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A,
 --        <tt>rec["028A/01"]</tt> returns field 028A/01
@@ -363,8 +415,9 @@ function PicaRecord:first( field, subfield )
         return dummy()
     end
 
+
     for n,f in pairs(field) do
-        if occ == '*' or occ == f.occ or (occ == '00' and f.occ) then
+        if occ == '*' or occ == f.occ or (occ == '00' and f.occ ~= '') then
             if subfield == nil then
                 return f
             else
@@ -375,6 +428,69 @@ function PicaRecord:first( field, subfield )
 
     -- not found
     return dummy()
+end
+
+--- Returns whether a given locator matches.
+function PicaRecord:has(...)
+    local f = self:first(...)
+    return (f ~= '' or not f.empty)
+end
+
+---Get matching values from the record.
+-- with error checking
+function PicaRecord:get( query, ... )
+    local result, err
+    assert( type(query) == "string" and query ~= "", "query must be a non-empty string" )
+    local m = query:sub(1,1)
+    if m == "!" then
+        result = self:all( query:sub(2), ... )
+        if #result ~= 1 then
+            err = 'got '..#result..' values instead of one'
+        end
+        result = result[1]
+    elseif m == "+" then
+        result = self:all( query:sub(2), ... )
+        if #result == 0 then
+            err = 'not found'
+        end
+    elseif m == "*" then
+        result = self:all( query:sub(2), ... )
+    else
+        result = self:first( query, ... )
+    end
+    -- TODO: check type of result - do we want to allow PicaField?
+    return result, err
+end
+
+--- Transforms the record to a table using a mapping table.
+-- @param map mapping table
+-- @see PicaRecord:get
+-- @return table of transformed values
+-- @return table of errors or nil of no errors occurred
+function PicaRecord:map( map )
+    assert( type(map) == "table", "mapping table required" )
+    local result, errors = {}, {}
+    local key,pattern,value,err
+    for key,pattern in pairs(map) do
+        if type(pattern) == "string" then
+           value,err = self:get( pattern )
+        elseif type(pattern) == "table" then
+           value,err = self:get( unpack(pattern) )
+        else
+           error( "pattern must be string or table" )
+        end
+        if err then
+            errors[key] = err
+        end 
+        if (type(value) == "string" and value ~= "") 
+           or (type(value) == "table" and not (next(value) == nil)) then
+            result[key] = value
+        end
+    end
+    if next(errors) == nil then
+        errors = nil 
+    end
+    return result, errors
 end
 
 

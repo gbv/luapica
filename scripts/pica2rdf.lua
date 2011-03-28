@@ -149,7 +149,7 @@ end
 -------------------------------------------------------------------------------
 --- Main conversion
 function main(s)
-    record = PicaRecord.parse( s )
+    record = PicaRecord.new( s )
 
     local ttl
 

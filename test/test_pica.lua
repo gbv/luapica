@@ -166,7 +166,7 @@ TestRecord = {}
 function TestRecord:testNew()
     local f,r = nil,PicaRecord.new()
     
-    r = PicaRecord.parse("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
+    r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
 
     f = r:first("028A")
     assertEquals( f.tag, "028A" )
@@ -202,7 +202,7 @@ function TestRecord:testNew()
 end
 
 function TestRecord:testAll()
-    local r = PicaRecord.parse("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
+    local r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
     local f = r['028A']
     
     --print(dump( f:all('d') ))
