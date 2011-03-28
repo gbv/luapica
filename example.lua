@@ -1,16 +1,3 @@
-lua-pica
---------
-Lua library to handle PICA+ data
-
-Installation
-------------
-Copy the contents of the 'src' directory (at least 'pica.lua') into a 
-location on your LUA_PATH.
-
-Synopsis
---------
-The following script ('example.lua') shows how to use the library:
-
     require 'pica'
 
     r = io.read("*all")           -- read from standard input
@@ -35,18 +22,3 @@ The following script ('example.lua') shows how to use the library:
         subject = {'*041A','8'},   -- optional any number of values
         language = {'010@','a'}    -- first matching value, if any    
     }
-
-Examples
---------
-The file 'src/picaconv.lua' contains a command line script to convert
-PICA+ records. The first command line argument must be a concrete lua 
-conversion script somewhere where lua can find it. The shell script 
-'picaconv' sets the LUA_PATH variable for this purpose, so you can you
-use all conversion scripts in the 'scripts' directory like this:
-
-    $ picaconv <script> <picafile>
-
-Feedback and updates
---------------------
-please visit https://github.com/nichtich/lua-pica
-
