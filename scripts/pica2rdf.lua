@@ -1,18 +1,25 @@
+-------------------------------------------------------------------------------
+--- Experimental demo conversion from PICA+ to RDF/Turtle
+-- @file
+-------------------------------------------------------------------------------
+
 require 'pica'
 
----
--- Experimental demo script for PICA+ to RDF conversion
----
-
 -------------------------------------------------------------------------------
---- Simple turtle serialization object
+--- Simple turtle serializer.
 -- Stores multiple RDF statements with the same subject.
+-- @class table
+-- @name Turtle
+-------------------------------------------------------------------------------
 Turtle = {
-    known_namespaces = {
+
+    -- static properties
+    popular_namespaces = {
         dc   = 'http://purl.org/dc/elements/1.1/',
         dct  = 'http://purl.org/dc/terms/',
         bibo = 'http://purl.org/ontology/bibo/',
-        frbr = 'http://purl.org/vocab/frbr/core#'
+        frbr = 'http://purl.org/vocab/frbr/core#',
+        xsd  = 'http://www.w3.org/2001/XMLSchema#',
     },
     literal_escape = {
         ['"']   = "\\\"",
@@ -20,33 +27,42 @@ Turtle = {
         ["\t"] = "\\t",
         ["\n"] = "\\n",
         ["\r"] = "\\r"
-    }
-}
+    },
 
-Turtle.__index = function (tt,key)
-    return Turtle[key]
-end
+    -- operators
+    __index = function(ttl,key) -- ttl [ key ]
+        return Turtle[key]
+    end
+
+    -- # ttl   returns the number of triples
+}
 
 function Turtle.new( subject )
     local tt = {
         subject = subject,
+        warnings = { },
         namespaces = { }
     }
     setmetatable(tt,Turtle)
     return tt
 end
 
---- Adds a statement (predicate and object)
+function Turtle:warn( msg )
+    table.insert( self.warnings, msg )
+    return false
+end
+
+--- Adds a statement with literal as object.
 -- empty strings as object values are ignored!
 -- unknown predicate vocabularies are ignored!
-function Turtle:add( predicate, object )
+function Turtle:add( predicate, object, lang_or_type )
     if object == nil or object == "" then
         return false
     end
 
-    if type(object) == "string" then
-        object = self.literal(object)
-    end
+    if type(object) == "string" or type(object) == "number" then
+        object = self:literal(object, lang_or_type)
+    end -- else???
 
     if not self:use_uri( predicate ) then
         return false -- TODO. log error
@@ -56,6 +72,7 @@ function Turtle:add( predicate, object )
     return true
 end
 
+--- Adds a statement with URI as object.
 function Turtle:addlink( predicate, uri )
     if uri == nil or uri == "" then
         return false
@@ -69,20 +86,24 @@ function Turtle:addlink( predicate, uri )
     return true
 end
 
+
 function Turtle:use_uri( uri )
     if uri == 'a' or uri:find('^<[^>]*>$') then
         return true
     else
         local _,_,prefix = uri:find('^([a-z]+):')
-        if prefix and self.known_namespaces[prefix] then
-            self.namespaces[prefix] = self.known_namespaces[prefix]
+        if prefix and self.popular_namespaces[prefix] then
+            self.namespaces[prefix] = self.popular_namespaces[prefix]
         else
-            return false -- unknown prefix
+            prefix = prefix and prefix..':' or uri
+            self:warn( "unknown uri prefix " .. prefix )
+            return false
         end
     end
     return true
 end
 
+--- Returns a RDF/Turtle document
 function Turtle:__tostring()
     if #self == 0 then return "" end
 
@@ -94,17 +115,26 @@ function Turtle:__tostring()
     end
     if ns then ns = ns .. "\n" end
 
-    return ns .. "<" .. self.subject .. ">"
+    return ns .. self.subject 
         .. table.concat( self, " ;\n    " ) .. " .\n"
 end
 
-function Turtle.literal( value, type_or_lang )
+function Turtle:literal( value, lang_or_type )
     local str
     if type(value) == "string" then
         str = value:gsub('(["\\\t\n\r])',function(c)
             return Turtle.literal_escape[c]
         end)
         str = '"'..str..'"'
+        if lang_or_type and lang_or_type ~= '' then
+            if lang_or_type:find('^[a-z][a-z]$') then -- TODO: less restrictive
+                str = str .. '@' .. lang_or_type
+            elseif self:use_uri( lang_or_type ) then
+                str = str .. '^^' .. lang_or_type
+            else
+                return
+            end
+        end
         -- TODO: add type_or_lang
     elseif type(value) == "number" then
         str = value
@@ -114,14 +144,21 @@ end
 
 
 -------------------------------------------------------------------------------
+--- Transforms a bibliographic PICA+ record
+-------------------------------------------------------------------------------
 function bibrecord(record, ttl)
-    -- TODO: nicht für Normdaten!
     ttl:addlink('a','dct:BibliographicResource')
 
-    ttl:add( "dc:title", record:first('021A','a') )
-    ttl:add( "dct:issued", record:first('011@','a') )
+    dc = record:map({
+       ['dc:title'] = {'021A','a'},
+       ['dct:extent'] = {'034D','a'}, -- TODO: add 034M    $aIll., graph. Darst.
+    })
 
-    ttl:add( "dct:extent", record:first('034D','a') ) -- TODO: add 034M    $aIll., graph. Darst.
+    for key,value in pairs(dc) do
+        ttl:add( key, value )
+    end
+
+    ttl:add( "dct:issued", record:first('011@','a'), 'xsd:gYear' ) -- TODO: check datatype
 
     -- The following code will further be simplified to something like:
     -- record:all('045Q','8', function(v) 
@@ -138,12 +175,23 @@ function bibrecord(record, ttl)
         end
     end
 
-    -- 041A $Ss$9491359985$8Ubuntu <Programm> ; SWD-ID: 48334261
-    -- 041A/01 $Ss$9105105368$8Server ; SWD-ID: 42093247
+    -- TODO: use filter function instead of loop
+    local swd = record:all('041A','8')
+    for _,s in ipairs(swd) do
+        _,_,swdid = s:find('ID:%s*(%d+)')
+        if swdid then
+            ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
+        end
+    end
 end
 
+-------------------------------------------------------------------------------
+--- Transforms an authority record
+-------------------------------------------------------------------------------
 function  authorityrecord(record,ttl)
     -- TODO
+    -- local type = record:first('022@','0'):sub(2,1)
+    -- ...
 end
 
 -------------------------------------------------------------------------------
@@ -161,32 +209,34 @@ function main(s)
     local err
 
     if type:find('^[ABCEGHKMOSVZ]') then
+
         local eki = record:first('007G')
         eki = eki['c']..eki['0']
         if eki == "" then
-            return "# EKI not found"
+            ttl = Turtle.new( "[ ]" )
+            ttl:warn("EKI not found")
+        else
+            ttl = Turtle.new( "<info/eki:"..eki..">" )
+            ttl:add( "dc:identifier", eki )
         end
-        ttl = Turtle.new( "info/eki:"..eki )
 
-        ttl:add( "dc:identifier", eki )
-
-        err = bibrecord(record,ttl)
+        bibrecord(record,ttl)
     elseif type:find('^Tp') then -- Person
+
         local pnd = record:first('007S','0')
         if pnd == "" then
-            err = "# Missing PND"
+            ttl = Turtle.new( "[ ]" )
+            ttl:warn("# Missing PND")
         else 
-            ttl = Turtle.new( "http://d-nb.info/gnd/" .. pnd )
+            ttl = Turtle.new( "<http://d-nb.info/gnd/" .. pnd..">" )
             ttl:add( "dc:identifier", pnd )
-            err = authorityrecord(record, ttl)
+            authorityrecord(record, ttl)
         end
+
+    else
+        return "# Unknown record type: "..type
     end
 
-    if not ttl then
-        err = "# Unknown record type"
-    end
-
-    if err then return err end
     return tostring(ttl)
 end
 
