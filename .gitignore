@@ -1,5 +1,6 @@
 # documentation ($ make doc)
 doc
+gh-pages
 
 # temporary files and other junk
 *~
