@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# This script updates the 'gh-branch' with all files from a
+# documentation directory and pushes the branch to the origin repository.
+#
+# I use this script in a directory 'gh-pages' that was created this way:
+#
+# $ mkdir gh-pages
+# $ echo gh-pages >> .gitignore
+# $ cd gh-pages
+# $ git clone ../.git .
+# $ git checkout gh-pages
+
+DOC=../doc
+MSG="automatic update"
+
+set -e # for security exit if any command fails
+shopt -s extglob # extended globbing: !(...)
+
+# make sure this script is only called in its own directory
+cd `dirname $BASH_SOURCE`
+ME=`basename $0`
+
+# make sure there is some documentation
+if [ ! -d $DOC -o ! "$(ls -A $DOC)" ]; then
+    echo "Missing directory doc/ or directory empty"
+    exit
+fi
+
+# make sure we don't overwrite this script
+if [ -f $DOC/$ME ]; then
+    echo "No, won't kill myself!"
+    exit
+fi
+
+# remove all files by this script (and .* of course)
+rm -rf !($ME)
+
+# copy documentation
+cp -r $DOC/* .
+
+# add all files and remove all deleted files
+git add *
+git ls-files -z --deleted | xargs -0 --no-run-if-empty git rm
+
+# commit and push
+git commit -m "$MSG"
+git push origin gh-pages
+
