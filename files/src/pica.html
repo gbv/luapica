@@ -1,0 +1,775 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+    <title>Luadocs for src/pica.lua</title>
+    <link rel="stylesheet" href="../../luadoc.css" type="text/css" />
+	<!--meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/-->
+</head>
+
+<body>
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+<div id="main">
+
+<div id="navigation">
+
+
+<h1>LuaDoc</h1>
+<ul>
+	
+	<li><a href="../../index.html">Index</a></li>
+	
+</ul>
+
+
+<!-- Module list -->
+
+<h1>Modules</h1>
+<ul>
+
+	<li>
+		<a href="../../modules/pica.html">pica</a>
+	</li>
+
+</ul>
+
+
+
+<!-- File list -->
+
+<h1>Files</h1>
+<ul>
+
+	<li>
+		<a href="../../files/scripts/pica2rdf.html">scripts/pica2rdf.lua</a>
+	</li>
+
+	<li><strong>src/pica.lua</strong></li>
+	
+	<li>
+		<a href="../../files/src/picaconv.html">src/picaconv.lua</a>
+	</li>
+
+</ul>
+
+
+
+
+
+
+</div> <!-- id="navigation" -->
+
+<div id="content">
+
+<h1>File <code>src/pica.lua</code></h1>
+
+
+<p>Handle PICA+ data in Lua. This module provides two classes (<a href="#PicaField">PicaField</a> and <a href="#PicaRecord">PicaRecord</a>) for PICA+ data. The programming interface of these classes is optimized for easy access and conversion of PICA+ records. Have a look at the file 'example.lua' for a synopsis. </p>
+
+
+<p><b>Author:</b>
+<ul class="authors_list">
+
+	<li class="name">Jakob Voss <voss@gbv.de></li>
+
+</ul>
+</p>
+
+
+
+
+
+<h2>Tables</h2>
+<table class="table_list">
+
+	<tr>
+	<td class="name" nowrap><a href="#PicaField">PicaField</a></td>
+	<td class="summary">Stores an ordered list of PICA+ subfields.</td>
+	</tr>
+
+	<tr>
+	<td class="name" nowrap><a href="#PicaRecord">PicaRecord</a></td>
+	<td class="summary">Stores a PICA+ record.</td>
+	</tr>
+
+</table>
+
+
+
+
+
+
+<h2><a name="tables"></a>Tables</h2>
+<dl class="table">
+
+  
+    <dt><a name="PicaField"></a><strong>PicaField</strong></dt>
+<dd>Stores an ordered list of PICA+ subfields. This class overloads the following operators: <ul> <li><tt>#f</tt> returns the number of subfields.</li> <li><tt>f % l</tt> returns whether locator <tt>l</tt> applies to field <tt>f</tt> (see <a href="#PicaField:has">PicaField:has</a>). </ul>
+
+
+<h3>Fields</h3>
+<ul>
+	
+	<li>
+	  n: (number) the <i>n</i>th subfield value or <tt>nil</tt>
+        </li>
+	
+	<li>
+	  c: (string) the <i>first</i> subfield value of a subfield with code <i>c</i> where <i>c</i> can be a letter (<tt>a-z</tt> or <tt>A-Z</tt>) or a digit (<tt>0-9</tt>). An empty string is returned if no such subfields exists (see <a href="#PicaField:has">PicaField:first</a>).
+        </li>
+	
+	<li>
+	  ok: returns whether the field has a tag and is not empty
+        </li>
+	
+	<li>
+	  empty: returns whether the field has no subfields (<tt>#f == 0</tt>)
+        </li>
+	
+</ul>
+
+
+    
+   
+      <h3>Methods</h3>
+      <ul>
+        
+        <li>
+           <a href="#PicaField.new">PicaField.new</a>
+           Creates a new PICA+ field.
+        </li>
+        
+        <li>
+           <a href="#PicaField.parse">PicaField.parse</a>
+           Creates a new PICA+ field by parsing a line of PICA+ format.
+        </li>
+        
+        <li>
+           <a href="#PicaField:all">PicaField:all</a>
+           Returns a list of all matching values 
+        </li>
+        
+        <li>
+           <a href="#PicaField:append">PicaField:append</a>
+           Appends a subfield.
+        </li>
+        
+        <li>
+           <a href="#PicaField:first">PicaField:first</a>
+           Returns the first value of a given subfield or an empty string.
+        </li>
+        
+        <li>
+           <a href="#PicaField:has">PicaField:has</a>
+           Checks whether a field contains a given subfield.
+        </li>
+        
+        <li>
+           <a href="#PicaField:list">PicaField:list</a>
+           Returns the subfields as array.
+        </li>
+        
+        <li>
+           <a href="#PicaField:values">PicaField:values</a>
+           Returns a list of subfield values.
+        </li>
+        
+      </ul>
+   
+
+
+</dd>
+
+  
+
+  
+    <dt><a name="PicaRecord"></a><strong>PicaRecord</strong></dt>
+<dd>Stores a PICA+ record. Basically a PicaRecord is a list of PICA+ fields This class overloads the following operators: <ul> <li><tt>#r</tt> returns the number of fields.</li> <li><tt>r % l</tt> returns whether locator <tt>p</tt> matches <tt>r</tt> (see <a href="#PicaRecord:has">PicaRecord:has</a>). </ul>
+
+
+<h3>Fields</h3>
+<ul>
+	
+	<li>
+	  n: (number) the <i>n</i>th field
+        </li>
+	
+	<li>
+	  locator: (string) the first matching field or value (see <a href="#PicaRecord:first">PicaRecord:first</a>)
+        </li>
+	
+</ul>
+
+
+    
+   
+      <h3>Methods</h3>
+      <ul>
+        
+        <li>
+           <a href="#PicaRecord.new">PicaRecord.new</a>
+           Creates a new PICA+ record.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord.parse_field_locator">PicaRecord.parse_field_locator</a>
+           Parses a field locator into tag and occurrence.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:all">PicaRecord:all</a>
+           Returns all matching values 
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:append">PicaRecord:append</a>
+           Appends a field to the record.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:first">PicaRecord:first</a>
+           Returns the first matching field or subfield value 
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:get">PicaRecord:get</a>
+           Get matching values from the record.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:has">PicaRecord:has</a>
+           Returns whether a given locator matches.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:map">PicaRecord:map</a>
+           Transforms the record to a table using a mapping table.
+        </li>
+        
+      </ul>
+   
+
+
+</dd>
+
+  
+
+</dl>
+
+
+
+
+
+
+<h2><a name="functions"></a>Functions</h2>
+<dl class="function">
+
+
+
+<dt><a name="PicaField.new"></a><strong>PicaField.new</strong>&nbsp;(tag, occ)</dt>
+<dd>
+Creates a new PICA+ field. The newly created field will have no subfields. The optional occurence indicator can only be set in addition to a valid tag. On failure this returns an empty field with its tag set to the empty string.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  tag: optional tag (e.g. <tt>021A</tt>) or tag and occurence (e.g. <tt>009P/09</tt>)
+	</li>
+	
+	<li>
+	  occ: optional occurence indicator (<tt>01</tt> to <tt>99</tt>)
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField.parse"></a><strong>PicaField.parse</strong>&nbsp;(line)</dt>
+<dd>
+Creates a new PICA+ field by parsing a line of PICA+ format. On failure an empty PicaField instance is returned.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  line: 
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3 class="inline-block">Usage:</h3>
+<tt>field = PicaField:parse(str)<br> if field.tag then <br>-- successfully parsed field<br>end</tt>
+
+</div>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:all"></a><strong>PicaField:all</strong>&nbsp;(code)</dt>
+<dd>
+Returns a list of all matching values
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  code: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:append"></a><strong>PicaField:append</strong>&nbsp;(code, value)</dt>
+<dd>
+Appends a subfield. On failure adds nothing.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  code: subfield code (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>)
+	</li>
+	
+	<li>
+	  value: subfield value. Must be a non-empty string.
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:first"></a><strong>PicaField:first</strong>&nbsp;(code)</dt>
+<dd>
+Returns the first value of a given subfield or an empty string.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  code: a subfield code
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:has"></a><strong>PicaField:has</strong>&nbsp;(...)</dt>
+<dd>
+Checks whether a field contains a given subfield.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  ...: subfield code (one character of <tt>a-z</tt>, <tt>A-Z</tt> or <tt>0-9</tt>)
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3 class="inline-block">Usage:</h3>
+<tt>f:has("x")</tt> or <tt>f % "x"</tt>
+
+</div>
+
+
+
+<div>
+
+<h3 class="inline-block">Return value:</h3>
+boolean result of <tt>(self:first( subfield ) ~= "")</tt>
+
+</div>
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:list"></a><strong>PicaField:list</strong>&nbsp;()</dt>
+<dd>
+Returns the subfields as array. { [1] = { 'a' = 'foo' }, [2] = { 'b' : 'bar' }, [3] => { 'a' = 'doz' } ...
+
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:values"></a><strong>PicaField:values</strong>&nbsp;(code)</dt>
+<dd>
+Returns a list of subfield values.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  code: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord.new"></a><strong>PicaRecord.new</strong>&nbsp;(str)</dt>
+<dd>
+Creates a new PICA+ record. If you provide a string, it will be parsed as PICA+ format.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  str: (optional string) string to parse
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord.parse_field_locator"></a><strong>PicaRecord.parse_field_locator</strong>&nbsp;(field)</dt>
+<dd>
+Parses a field locator into tag and occurrence. see PicaRecord:first and PicaRecord:all for examples
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  field: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:all"></a><strong>PicaRecord:all</strong>&nbsp;(field, subfield)</dt>
+<dd>
+Returns all matching values
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  field: 
+	</li>
+	
+	<li>
+	  subfield: 
+	</li>
+	
+</ul>
+
+
+
+
+
+<div>
+
+<h3 class="inline-block">Return value:</h3>
+table TODO: support field locators as in :first
+
+</div>
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:append"></a><strong>PicaRecord:append</strong>&nbsp;(field)</dt>
+<dd>
+Appends a field to the record.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  field: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:first"></a><strong>PicaRecord:first</strong>&nbsp;(field, subfield)</dt>
+<dd>
+Returns the first matching field or subfield value
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  field: locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt> or <tt>AAAA/BB</tt> or <tt>AAAA/00</tt>)
+	</li>
+	
+	<li>
+	  subfield: 
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3 class="inline-block">Usage:</h3>
+<tt>rec["028A/"]</tt> returns field 028A but not 028A/xx, <tt>rec["028A"]</tt> returns field 028A or 028A/xx, <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A, <tt>rec["028A/01"]</tt> returns field 028A/01
+
+</div>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:get"></a><strong>PicaRecord:get</strong>&nbsp;(query, ...)</dt>
+<dd>
+Get matching values from the record. with error checking
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  query: 
+	</li>
+	
+	<li>
+	  ...: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:has"></a><strong>PicaRecord:has</strong>&nbsp;(...)</dt>
+<dd>
+Returns whether a given locator matches.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  ...: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:map"></a><strong>PicaRecord:map</strong>&nbsp;(map)</dt>
+<dd>
+Transforms the record to a table using a mapping table.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  map: mapping table
+	</li>
+	
+</ul>
+
+
+
+
+
+<div>
+
+<h3>Return values:</h3>
+<ol>
+	
+	<li>table of transformed values
+	
+	<li>table of errors or nil of no errors occurred
+	
+</ol>
+
+</div>
+
+
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="../../files/src/pica.html#PicaRecord:get">
+		PicaRecord:get
+	</a>
+	
+</ul>
+
+</div>
+
+
+</dd>
+
+
+</dl>
+
+
+</div> <!-- id="content" -->
+
+</div> <!-- id="main" -->
+
+<div id="about">
+	<p><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a></p>
+</div> <!-- id="about" -->
+
+</div> <!-- id="container" -->
+</body>
+</html>
