@@ -1,13 +1,17 @@
 
-.PHONY: all clean doc install test
+.PHONY: test doc update-doc clean
 
 
 test:
 	@export LUA_PATH='$(CURDIR)/lib/?.lua;$(CURDIR)/test/?.lua' && lua test/run_tests.lua
 
 doc:
-	luadoc -d docs lib/*.lua scripts/*.lua
+	@rm -rf doc
+	luadoc -d doc src/*.lua scripts/*.lua
+
+update-doc: doc
+	./gh-pages/update
 
 clean:
-	rm -rf docs
-	rm *~
+	rm -rf doc
+
