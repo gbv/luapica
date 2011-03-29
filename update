@@ -5,11 +5,19 @@
 #
 # I use this script in a directory 'gh-pages' that was created this way:
 #
-# $ mkdir gh-pages
+# First the branch 'gh-pages' must be present
+# $ git checkout -b gh-pages remotes/origin/gh-pages
+#
+# The subdirectory gh-pages should be ignore
+# $ git checkout master
 # $ echo gh-pages >> .gitignore
+# $ git add -m "ignore gh-pages directory"
+# $ git commit
+#
+# Create the subdirectory
+# $ mkdir gh-pages
 # $ cd gh-pages
-# $ git clone ../.git .
-# $ git checkout gh-pages
+# $ git clone -b gh-pages ../.git . 
 
 DOC=../doc
 MSG="automatic update"
