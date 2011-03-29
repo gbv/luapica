@@ -1,4 +1,3 @@
-
 .PHONY: test doc update-doc clean
 
 
@@ -7,7 +6,7 @@ test:
 
 doc:
 	@rm -rf doc
-	luadoc -d doc src/*.lua scripts/*.lua
+	luadoc -d doc lib/*.lua scripts/*.lua
 
 update-doc: doc
 	./gh-pages/update

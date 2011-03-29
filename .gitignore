@@ -6,4 +6,6 @@ gh-pages
 *~
 *.bak
 .DS_Store
+*.tmp
+tmp*
 

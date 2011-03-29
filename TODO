@@ -1,3 +1,6 @@
-- fix LuaDoc (https://github.com/keplerproject/luadoc)
+- more LuaDoc
 - agree on API to access fields and subfields
 - add small conversion examples (probably with a 'main' function)
+- publish as Lua Rock (see http://luarocks.org/repositories/rocks/)
+- maybe switch to another testing framework like http://fperrad.github.com/lua-TestMore/
+  or http://luaforge.net/projects/lunit/ instead of luaunit

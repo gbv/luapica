@@ -12,6 +12,32 @@
 -- @see PicaRecord
 -----------------------------------------------------------------------------
 
+-- this may increase performance
+local string, table = string, table
+
+
+--- Returns a filter function based on a Lua pattern.
+-- The returned filter function removes all values that do not match the
+-- pattern. If the pattern contains a capture expression, each value is
+-- replaced by the first captured value.
+-- @param pattern a
+--   <a href="http://www.lua.org/manual/5.1/manual.html#5.4.1">pattern</a>
+-- @usage check digit: <tt>record:find(tag,sf,patternfilter('%d'))</tt> 
+-- @usage extract digit: <tt>record:find(tag,sf,patternfilter('(%d)'))</tt>
+patternfilter = function( pattern )
+    assert( type(patter) == "string", "pattern must be a string" )
+    return function( value )
+        local start,_captuere = value:find(pattern)
+        if not start then
+            return false
+        elseif capture then
+            return capture
+        else
+            return value
+        end
+    end
+end
+
 -----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields.
 -- This class overloads the following operators: 
