@@ -56,6 +56,29 @@ function TestRecords:testAll()
 
 end
 
+function TestRecords:testFilter()
+    local record = self:loadRecord('01')
+
+    assertEquals( #record:all('041A','8',patternfilter('41')), 2 )
+    assertEquals( #record:all('041A','8',patternfilter('%d%d')), 5 )
+    assertEquals( #record:all('041A','8',function() return true end), 5 )
+    assertEquals( #record:all('041A','8',function() return false end), 0 )
+    assertEquals( #record:all('041A','8',function() return 1 end), 0 )
+
+    local list = record:all( '041A', '8', function() return "x" end )
+    assertEquals( list[1], "x" )
+
+    list = record:all( '041A', '8', patternfilter('(%d%d)') )
+    assertEquals( list[1], "41" )
+
+    --- filter fields
+    assertEquals( #record:filter( function(f) return f.tag == "041A" end), 6 )
+    assertEquals( #record:filter( function(f) return f['8'] ~= '' end ), 8 )
+    assertEquals( #record:filter( '041A', function(f) return f.S == 's' end ), 5 )
+    assertEquals( #record:filter( '041A', function(f) return f['8']:find('41') end ), 2 )
+
+end
+
 function TestRecords:testMap()
     local record = self:loadRecord('01')
 
@@ -96,6 +119,5 @@ function TestRecords:testMap()
     assertEquals( errors.x, nil )
     assertEquals( errors.y, 'got 5 values instead of one' )
     assertEquals( errors.z, 'not found' )
-    --assertEquals( errors, '' )
   
 end

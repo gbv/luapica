@@ -23,3 +23,11 @@
         subject = {'*041A','8'},   -- optional any number of values
         language = {'010@','a'}    -- first matching value, if any    
     }
+
+    -- use fields locators and custom filters to select fields
+    gndfields = record:filter('041A', function(f) return f.S == 's' end )
+
+    -- filter and transform subfield values with filters, e.g. 'patternfilter'
+    notations = record:all('045Q','8', patternfilter('(%d%d\.%d%d)') )
+
+

@@ -4,3 +4,4 @@
 - publish as Lua Rock (see http://luarocks.org/repositories/rocks/)
 - maybe switch to another testing framework like http://fperrad.github.com/lua-TestMore/
   or http://luaforge.net/projects/lunit/ instead of luaunit
+- enchance pattern filters with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html 

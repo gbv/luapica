@@ -160,6 +160,14 @@ function TestField:testParsing()
 
 end
 
+function TestField:testReadonly()
+    local f = PicaField.new("123A")
+    assertError( function() f.tag = "x" end )    
+    assertError( function() f.tag = "123A" end )    
+    assertError( function() f.occ = "02" end )    
+    assertError( function() f.full = "123X/02" end )    
+end
+
 
 TestRecord = {}
 

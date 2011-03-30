@@ -164,28 +164,15 @@ function bibrecord(record, ttl)
 
     ttl:add( "dct:issued", record:first('011@','a'), 'xsd:gYear' ) -- TODO: check datatype
 
-    -- The following code will further be simplified to something like:
-    -- record:all('045Q','8', function(v) 
-    --      local _,_,n = v:find('(%d%d\.%d%d)')
-    --      if n then return n end
-    --)
-    -- or with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html 
-    --  record:all('045Q','8', re.compile('(%d%d\.%d%d)') )
-    local bklinks = record:all('045Q','8')
-    for k,bk in pairs(bklinks) do
-        _,_,notation = bk:find('(%d%d\.%d%d)')
-        if (notation) then
-            ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' )
-        end
+
+    local bklinks = record:all('045Q','8',patternfilter('(%d%d\.%d%d)'))
+    for _,notation in pairs(bklinks) do
+        ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' )
     end
 
-    -- TODO: use filter function instead of loop
-    local swd = record:all('041A','8')
-    for _,s in ipairs(swd) do
-        _,_,swdid = s:find('ID:%s*(%d+)')
-        if swdid then
-            ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
-        end
+    local swd = record:all('041A','8',patternfilter('D\-ID:%s*(%d+)'))
+    for _,swdid in ipairs(swd) do
+        ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
     end
 end
 
