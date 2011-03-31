@@ -30,4 +30,10 @@
     -- filter and transform subfield values with filters, e.g. 'patternfilter'
     notations = record:all('045Q','8', patternfilter('(%d%d\.%d%d)') )
 
+    -- filter and transform subfield value with 'formatfilter'
+    f = record:first('028A')
+    nametype = f:first('f',formatfilter("(%s)"))
 
+    print( f:join(' ',     -- join selected subfields, separated by space
+      'e','d','a','5',     -- collect these subfields (if given) in this order
+      { 'f', formatfilter('(%s)') } )) -- also with filters

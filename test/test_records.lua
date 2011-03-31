@@ -79,6 +79,12 @@ function TestRecords:testFilter()
 
 end
 
+function TestRecords:testGet()
+    local record,f = self:loadRecord('01')
+
+    assertError(function() record:get({}) end)
+end
+
 function TestRecords:testMap()
     local record = self:loadRecord('01')
 
