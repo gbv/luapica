@@ -16,7 +16,7 @@ clean:
 rockspec:
 	@cd rockspec && rm -f luapica-*.rockspec && \
 	awk 'BEGIN {FS="\""}; $$0 ~ "version" {print "luapica-"$$2".rockspec"}' \
-	lua-pica.rockspec | xargs ln -s lua-pica.rockspec
+	luapica.rockspec | xargs ln -s luapica.rockspec
 
 # TODO: after pushing to master at github:
 # create rocks file

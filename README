@@ -1,4 +1,4 @@
-lua-pica
+luapica
 --------
 Lua library to handle PICA+ data
 
@@ -50,6 +50,9 @@ The following script ('example.lua') shows how to use the library:
       'e','d','a','5',     -- collect these subfields (if given) in this order
       { 'f', formatfilter('(%s)') } )) -- also with filters
 
+For a more detailed tutorial have a look at the project wiki at
+  https://github.com/nichtich/luapica/wiki
+
 Examples
 --------
 The file 'lib/picaconv.lua' contains a command line script to convert
@@ -63,7 +66,7 @@ use all conversion scripts in the 'scripts' directory like this:
 API Documentation
 -----------------
 For convenience the branch 'gh-pages' contains automatically generated
-documentation, that is published at http://nichtich.github.com/lua-pica
+documentation, that is published at http://nichtich.github.com/luapica
 
 The API documentation is generated with LuaDoc. However, LuaDoc has
 not been updated since years. I added some patches, so you get get a
@@ -79,5 +82,5 @@ You can then generate documentation with:
 
 Feedback and updates
 --------------------
-please visit https://github.com/nichtich/lua-pica
+please visit https://github.com/nichtich/luapica
 

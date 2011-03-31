@@ -1,1 +1,1 @@
-lua-pica.rockspec
+luapica.rockspec
