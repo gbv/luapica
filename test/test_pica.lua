@@ -192,6 +192,7 @@ function TestField:testReadonly()
     assertError( function() f.tag = "x" end )    
     assertError( function() f.tag = "123A" end )    
     assertError( function() f.occ = "02" end )    
+    assertError( function() f.num = 2 end )    
     assertError( function() f.full = "123X/02" end )    
 end
 
@@ -212,10 +213,12 @@ function TestRecord:testNew()
 
     f = r["028A"] -- get first field
     assertEquals( f.tag, "028A" )
+    assertEquals( f.num, 0 )
 
     f = r:first("028C/01")
     assertEquals( f.tag, "028C" )
     assertEquals( f.occ, "01" )
+    assertEquals( f.num, 1 )
 
     f = r["028C/01"]
     assertEquals( f.tag, "028C" )

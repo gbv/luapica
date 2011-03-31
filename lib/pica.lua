@@ -121,6 +121,9 @@ PicaField = {
         elseif key == 'empty' then
             return #rawget(field,'readonly').values == 0
 --            return #field == 0
+        elseif key == 'num' then
+            local occ = rawget(field,'readonly').occ
+            return occ == "" and 0 or tonumber(occ)
         elseif key == 'full' then
             return field:get_full()
         elseif key == 'str' then
@@ -137,7 +140,7 @@ PicaField = {
     -- field[ key ] = value    
     -- field.key = value    
     __newindex = function( field, key, value )
-        if field.readonly[key] or key == "full" then
+        if field.readonly[key] or key == "full" or key == "num" then
             error("field."..key.." is read-only")
         end
         rawset(field,key,value)
