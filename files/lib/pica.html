@@ -2,7 +2,7 @@
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
-    <title>Luadocs for src/pica.lua</title>
+    <title>Luadocs for lib/pica.lua</title>
     <link rel="stylesheet" href="../../luadoc.css" type="text/css" />
 	<!--meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/-->
 </head>
@@ -47,14 +47,14 @@
 <h1>Files</h1>
 <ul>
 
-	<li>
-		<a href="../../files/scripts/pica2rdf.html">scripts/pica2rdf.lua</a>
-	</li>
-
-	<li><strong>src/pica.lua</strong></li>
+	<li><strong>lib/pica.lua</strong></li>
 	
 	<li>
-		<a href="../../files/src/picaconv.html">src/picaconv.lua</a>
+		<a href="../../files/lib/picaconv.html">lib/picaconv.lua</a>
+	</li>
+
+	<li>
+		<a href="../../files/scripts/pica2rdf.html">scripts/pica2rdf.lua</a>
 	</li>
 
 </ul>
@@ -68,7 +68,7 @@
 
 <div id="content">
 
-<h1>File <code>src/pica.lua</code></h1>
+<h1>File <code>lib/pica.lua</code></h1>
 
 
 <p>Handle PICA+ data in Lua. This module provides two classes (<a href="#PicaField">PicaField</a> and <a href="#PicaRecord">PicaRecord</a>) for PICA+ data. The programming interface of these classes is optimized for easy access and conversion of PICA+ records. Have a look at the file 'example.lua' for a synopsis. </p>
@@ -103,6 +103,31 @@
 
 
 
+    <h2>Functions</h2>
+    <table class="function_list">
+    
+	<tr>
+	<td class="name" nowrap><a href="#filtervalue">filtervalue</a>&nbsp;(value, ...)</td>
+	<td class="summary">Simply returns a value, optionally filtered by one or more functions.</td>
+	</tr>
+    
+	<tr>
+	<td class="name" nowrap><a href="#formatfilter">formatfilter</a>&nbsp;(format)</td>
+	<td class="summary">Returns a filter function based on a Lua string format.</td>
+	</tr>
+    
+	<tr>
+	<td class="name" nowrap><a href="#patternfilter">patternfilter</a>&nbsp;(pattern)</td>
+	<td class="summary">Returns a filter function based on a Lua pattern.</td>
+	</tr>
+    
+	<tr>
+	<td class="name" nowrap><a href="#table_concat">table_concat</a>&nbsp;(a, b)</td>
+	<td class="summary">Insert all values with integer keys from one table to another.</td>
+	</tr>
+    
+    </table>
+  
 
 
 
@@ -147,18 +172,23 @@
         </li>
         
         <li>
-           <a href="#PicaField.parse">PicaField.parse</a>
-           Creates a new PICA+ field by parsing a line of PICA+ format.
-        </li>
-        
-        <li>
            <a href="#PicaField:all">PicaField:all</a>
-           Returns a list of all matching values 
+           Returns an ordered table of all matching values 
         </li>
         
         <li>
            <a href="#PicaField:append">PicaField:append</a>
-           Appends a subfield.
+           Appends one or more subfields.
+        </li>
+        
+        <li>
+           <a href="#PicaField:codes">PicaField:codes</a>
+           Returns an ordered list of subfield codes.
+        </li>
+        
+        <li>
+           <a href="#PicaField:collect">PicaField:collect</a>
+           Concatenate table of subfield values.
         </li>
         
         <li>
@@ -172,8 +202,8 @@
         </li>
         
         <li>
-           <a href="#PicaField:list">PicaField:list</a>
-           Returns the subfields as array.
+           <a href="#PicaField:join">PicaField:join</a>
+           Collect and join subfield values.
         </li>
         
         <li>
@@ -225,12 +255,22 @@
         
         <li>
            <a href="#PicaRecord:all">PicaRecord:all</a>
-           Returns all matching values 
+           Returns all matching values.
         </li>
         
         <li>
            <a href="#PicaRecord:append">PicaRecord:append</a>
            Appends a field to the record.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:apply">PicaRecord:apply</a>
+           Apply one or more function to each field of the record.
+        </li>
+        
+        <li>
+           <a href="#PicaRecord:filter">PicaRecord:filter</a>
+           Returns another PicaRecord with selected fields.
         </li>
         
         <li>
@@ -273,59 +313,30 @@
 
 
 
-<dt><a name="PicaField.new"></a><strong>PicaField.new</strong>&nbsp;(tag, occ)</dt>
+<dt><a name="PicaField.new"></a><strong>PicaField.new</strong>&nbsp;(tag, occ, fields)</dt>
 <dd>
-Creates a new PICA+ field. The newly created field will have no subfields. The optional occurence indicator can only be set in addition to a valid tag. On failure this returns an empty field with its tag set to the empty string.
+Creates a new PICA+ field. The newly created field will have no subfields. The optional occurence indicator can only be set in addition to a valid tag. On failure this returns an empty field with its tag set to the empty string. On failure an empty PicaField instance is returned.
 
 
 <h3>Parameters</h3>
 <ul>
 	
 	<li>
-	  tag: optional tag (e.g. <tt>021A</tt>) or tag and occurence (e.g. <tt>009P/09</tt>)
+	  tag: optional tag (e.g. <tt>021A</tt>) or tag and occurence (e.g. <tt>009P/09</tt>) or a full line of PICA+ format to parse.
 	</li>
 	
 	<li>
 	  occ: optional occurence indicator (<tt>01</tt> to <tt>99</tt>)
 	</li>
 	
-</ul>
-
-
-
-
-
-
-
-
-</dd>
-
-
-
-
-<dt><a name="PicaField.parse"></a><strong>PicaField.parse</strong>&nbsp;(line)</dt>
-<dd>
-Creates a new PICA+ field by parsing a line of PICA+ format. On failure an empty PicaField instance is returned.
-
-
-<h3>Parameters</h3>
-<ul>
-	
 	<li>
-	  line: 
+	  fields: 
 	</li>
 	
 </ul>
 
 
 
-<div>
-
-<h3 class="inline-block">Usage:</h3>
-<tt>field = PicaField:parse(str)<br> if field.tag then <br>-- successfully parsed field<br>end</tt>
-
-</div>
-
 
 
 
@@ -336,9 +347,9 @@ Creates a new PICA+ field by parsing a line of PICA+ format. On failure an empty
 
 
 
-<dt><a name="PicaField:all"></a><strong>PicaField:all</strong>&nbsp;(code)</dt>
+<dt><a name="PicaField:all"></a><strong>PicaField:all</strong>&nbsp;(code, ...)</dt>
 <dd>
-Returns a list of all matching values
+Returns an ordered table of all matching values
 
 
 <h3>Parameters</h3>
@@ -346,6 +357,10 @@ Returns a list of all matching values
 	
 	<li>
 	  code: 
+	</li>
+	
+	<li>
+	  ...: locator and/or filters
 	</li>
 	
 </ul>
@@ -364,18 +379,18 @@ Returns a list of all matching values
 
 <dt><a name="PicaField:append"></a><strong>PicaField:append</strong>&nbsp;(code, value)</dt>
 <dd>
-Appends a subfield. On failure adds nothing.
+Appends one or more subfields. On failure adds nothing.
 
 
 <h3>Parameters</h3>
 <ul>
 	
 	<li>
-	  code: subfield code (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>)
+	  code: subfield code (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>) or a line of PICA+ subfield, e.g. <tt>"$afoo$bbar"</tt>
 	</li>
 	
 	<li>
-	  value: subfield value. Must be a non-empty string.
+	  value: subfield value. Must be a string.
 	</li>
 	
 </ul>
@@ -392,7 +407,67 @@ Appends a subfield. On failure adds nothing.
 
 
 
-<dt><a name="PicaField:first"></a><strong>PicaField:first</strong>&nbsp;(code)</dt>
+<dt><a name="PicaField:codes"></a><strong>PicaField:codes</strong>&nbsp;()</dt>
+<dd>
+Returns an ordered list of subfield codes. For instance for a field <tt>$xfoo$ybar$xdoz</tt> this method returns the list <tt>'x','y','x'</tt>.
+
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:collect"></a><strong>PicaField:collect</strong>&nbsp;(...)</dt>
+<dd>
+Concatenate table of subfield values.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  ...: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="">
+		PicaField:get
+	</a>
+	
+	<li><a href="../../files/lib/pica.html#PicaField:join">
+		PicaField:join
+	</a>
+	
+</ul>
+
+</div>
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:first"></a><strong>PicaField:first</strong>&nbsp;(...)</dt>
 <dd>
 Returns the first value of a given subfield or an empty string.
 
@@ -401,7 +476,7 @@ Returns the first value of a given subfield or an empty string.
 <ul>
 	
 	<li>
-	  code: a subfield code
+	  ...: subfield code and/or optional filters
 	</li>
 	
 </ul>
@@ -458,33 +533,20 @@ boolean result of <tt>(self:first( subfield ) ~= "")</tt>
 
 
 
-<dt><a name="PicaField:list"></a><strong>PicaField:list</strong>&nbsp;()</dt>
+<dt><a name="PicaField:join"></a><strong>PicaField:join</strong>&nbsp;(sep, ...)</dt>
 <dd>
-Returns the subfields as array. { [1] = { 'a' = 'foo' }, [2] = { 'b' : 'bar' }, [3] => { 'a' = 'doz' } ...
-
-
-
-
-
-
-
-
-
-</dd>
-
-
-
-
-<dt><a name="PicaField:values"></a><strong>PicaField:values</strong>&nbsp;(code)</dt>
-<dd>
-Returns a list of subfield values.
+Collect and join subfield values.
 
 
 <h3>Parameters</h3>
 <ul>
 	
 	<li>
-	  code: 
+	  sep: 
+	</li>
+	
+	<li>
+	  ...: 
 	</li>
 	
 </ul>
@@ -494,6 +556,75 @@ Returns a list of subfield values.
 
 
 
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="../../files/lib/pica.html#PicaField:collect">
+		PicaField:collect
+	</a>
+	
+</ul>
+
+</div>
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaField:values"></a><strong>PicaField:values</strong>&nbsp;(...)</dt>
+<dd>
+Returns a list of subfield values. Calling this method as <tt>field:values(...)</tt> is equivalent to calling <tt>unpack(field:all(...))</tt>. In contrast to <tt>all</tt> and <tt>get</tt> this method returns not a table but a list of non-empty strings.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  ...: locator and/or filters
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3>Usage</h3>
+<ul>
+	
+	<li><tt>x,y,z = field:values()</tt>
+	
+	<li><tt>n = field:values('a',patternfilter('^%d+$'))</tt>
+	
+</ul>
+
+</div>
+
+
+
+
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="../../files/lib/pica.html#PicaField:all">
+		PicaField:all
+	</a>
+	
+	<li><a href="">
+		PicaField:get
+	</a>
+	
+</ul>
+
+</div>
 
 
 </dd>
@@ -553,9 +684,9 @@ Parses a field locator into tag and occurrence. see PicaRecord:first and PicaRec
 
 
 
-<dt><a name="PicaRecord:all"></a><strong>PicaRecord:all</strong>&nbsp;(field, subfield)</dt>
+<dt><a name="PicaRecord:all"></a><strong>PicaRecord:all</strong>&nbsp;(field, subfield, filter)</dt>
 <dd>
-Returns all matching values
+Returns all matching values.
 
 
 <h3>Parameters</h3>
@@ -569,6 +700,10 @@ Returns all matching values
 	  subfield: 
 	</li>
 	
+	<li>
+	  filter: function that is applied to each value as filter
+	</li>
+	
 </ul>
 
 
@@ -578,7 +713,7 @@ Returns all matching values
 <div>
 
 <h3 class="inline-block">Return value:</h3>
-table TODO: support field locators as in :first
+table
 
 </div>
 
@@ -599,7 +734,7 @@ Appends a field to the record.
 <ul>
 	
 	<li>
-	  field: 
+	  field: PicaField object to append
 	</li>
 	
 </ul>
@@ -609,6 +744,92 @@ Appends a field to the record.
 
 
 
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:apply"></a><strong>PicaRecord:apply</strong>&nbsp;(...)</dt>
+<dd>
+Apply one or more function to each field of the record. In contrast to PicaRecord:filter, the return values of functions are ignored and nothing is returned.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  ...: functions that are called for each field
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="../../files/lib/pica.html#PicaRecord:filter">
+		PicaRecord:filter
+	</a>
+	
+</ul>
+
+</div>
+
+
+</dd>
+
+
+
+
+<dt><a name="PicaRecord:filter"></a><strong>PicaRecord:filter</strong>&nbsp;(locator, ..., filter)</dt>
+<dd>
+Returns another PicaRecord with selected fields. You can filter fields by tag (and occurence indicator) and/or by using a filter method that is called for each field as <tt>filter(field)</tt>. A field is only included in the returned record, if the filter method returns true. Note that the returned record contains references to the original fields instead of copies!
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  locator: (optional) field locator
+	</li>
+	
+	<li>
+	  ...: 
+	</li>
+	
+	<li>
+	  filter: (optional) function that is called for each field
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+<div>
+
+<h3>See also:</h3>
+<ul>
+	
+	<li><a href="../../files/lib/pica.html#PicaRecord:apply">
+		PicaRecord:apply
+	</a>
+	
+</ul>
+
+</div>
 
 
 </dd>
@@ -747,13 +968,145 @@ Transforms the record to a table using a mapping table.
 <h3>See also:</h3>
 <ul>
 	
-	<li><a href="../../files/src/pica.html#PicaRecord:get">
+	<li><a href="../../files/lib/pica.html#PicaRecord:get">
 		PicaRecord:get
 	</a>
 	
 </ul>
 
 </div>
+
+
+</dd>
+
+
+
+
+<dt><a name="filtervalue"></a><strong>filtervalue</strong>&nbsp;(value, ...)</dt>
+<dd>
+Simply returns a value, optionally filtered by one or more functions. If a filter function returns true, the original value is returned. If a filter function returns no string or the empty string, nil is returned.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  value: 
+	</li>
+	
+	<li>
+	  ...: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="formatfilter"></a><strong>formatfilter</strong>&nbsp;(format)</dt>
+<dd>
+Returns a filter function based on a Lua string format.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  format: as specified for <a href="http://www.lua.org/manual/5.1/manual.html#5.4">string.format</a>
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3 class="inline-block">Usage:</h3>
+<tt>field:first('a',formatfilter('a is: %s'))</tt>
+
+</div>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="patternfilter"></a><strong>patternfilter</strong>&nbsp;(pattern)</dt>
+<dd>
+Returns a filter function based on a Lua pattern. The returned filter function removes all values that do not match the pattern. If the pattern contains a capture expression, each value is replaced by the first captured value.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  pattern: a <a href="http://www.lua.org/manual/5.1/manual.html#5.4.1">pattern</a>
+	</li>
+	
+</ul>
+
+
+
+<div>
+
+<h3>Usage</h3>
+<ul>
+	
+	<li>check digit: <tt>record:find(tag,sf,patternfilter('%d'))</tt>
+	
+	<li>extract digit: <tt>record:find(tag,sf,patternfilter('(%d)'))</tt>
+	
+</ul>
+
+</div>
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="table_concat"></a><strong>table_concat</strong>&nbsp;(a, b)</dt>
+<dd>
+Insert all values with integer keys from one table to another.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  a: the table to modify
+	</li>
+	
+	<li>
+	  b: the table to concat to table a
+	</li>
+	
+</ul>
+
+
+
+
+
+
 
 
 </dd>

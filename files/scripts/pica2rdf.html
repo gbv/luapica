@@ -47,16 +47,16 @@
 <h1>Files</h1>
 <ul>
 
+	<li>
+		<a href="../../files/lib/pica.html">lib/pica.lua</a>
+	</li>
+
+	<li>
+		<a href="../../files/lib/picaconv.html">lib/picaconv.lua</a>
+	</li>
+
 	<li><strong>scripts/pica2rdf.lua</strong></li>
 	
-	<li>
-		<a href="../../files/src/pica.html">src/pica.lua</a>
-	</li>
-
-	<li>
-		<a href="../../files/src/picaconv.html">src/picaconv.lua</a>
-	</li>
-
 </ul>
 
 
@@ -92,8 +92,13 @@
     <table class="function_list">
     
 	<tr>
-	<td class="name" nowrap><a href="#authorityrecord">authorityrecord</a>&nbsp;(record, ttl)</td>
-	<td class="summary">Transforms an authority record  </td>
+	<td class="name" nowrap><a href="#authority">authority</a>&nbsp;(rec, ttl)</td>
+	<td class="summary">Transforms PICA+ authority record  </td>
+	</tr>
+    
+	<tr>
+	<td class="name" nowrap><a href="#authority_person">authority_person</a>&nbsp;(rec, ttl)</td>
+	<td class="summary">Transforms a PICA+ authority record about a person  </td>
 	</tr>
     
 	<tr>
@@ -106,6 +111,11 @@
 	<td class="summary">Main conversion </td>
 	</tr>
     
+	<tr>
+	<td class="name" nowrap><a href="#trim">trim</a>&nbsp;(s)</td>
+	<td class="summary">Trim a string </td>
+	</tr>
+    
     </table>
   
 
@@ -116,7 +126,7 @@
 
   
     <dt><a name="Turtle"></a><strong>Turtle</strong></dt>
-<dd>Simple turtle serializer. Stores multiple RDF statements with the same subject. 
+<dd>Simple turtle serializer. This class provides a handy serializer form a limited subset of RDF/Turtle format. Each instances stores multiple RDF statements with the same subject. 
 
 
 
@@ -143,6 +153,16 @@
         <li>
            <a href="#Turtle:addlink">Turtle:addlink</a>
            Adds a statement with URI as object.
+        </li>
+        
+        <li>
+           <a href="#Turtle:subject">Turtle:subject</a>
+           Set the triple's subject.
+        </li>
+        
+        <li>
+           <a href="#Turtle:warn">Turtle:warn</a>
+           Add a warning message.
         </li>
         
       </ul>
@@ -272,16 +292,98 @@ Adds a statement with URI as object.
 
 
 
-<dt><a name="authorityrecord"></a><strong>authorityrecord</strong>&nbsp;(record, ttl)</dt>
+<dt><a name="Turtle:subject"></a><strong>Turtle:subject</strong>&nbsp;(subject)</dt>
 <dd>
-Transforms an authority record 
+Set the triple's subject.
 
 
 <h3>Parameters</h3>
 <ul>
 	
 	<li>
-	  record: 
+	  subject: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="Turtle:warn"></a><strong>Turtle:warn</strong>&nbsp;(message)</dt>
+<dd>
+Add a warning message.
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  message: string to add as warning. Trailing whitespaces are removed.
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="authority"></a><strong>authority</strong>&nbsp;(rec, ttl)</dt>
+<dd>
+Transforms PICA+ authority record 
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  rec: 
+	</li>
+	
+	<li>
+	  ttl: 
+	</li>
+	
+</ul>
+
+
+
+
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="authority_person"></a><strong>authority_person</strong>&nbsp;(rec, ttl)</dt>
+<dd>
+Transforms a PICA+ authority record about a person 
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  rec: 
 	</li>
 	
 	<li>
@@ -335,6 +437,39 @@ Transforms a bibliographic PICA+ record
 <dt><a name="main"></a><strong>main</strong>&nbsp;(s)</dt>
 <dd>
 Main conversion
+
+
+<h3>Parameters</h3>
+<ul>
+	
+	<li>
+	  s: a single record in PICA+ format (UTF-8)
+	</li>
+	
+</ul>
+
+
+
+
+
+<div>
+
+<h3 class="inline-block">Return value:</h3>
+string RDF/Turtle serialization
+
+</div>
+
+
+
+
+</dd>
+
+
+
+
+<dt><a name="trim"></a><strong>trim</strong>&nbsp;(s)</dt>
+<dd>
+Trim a string
 
 
 <h3>Parameters</h3>
