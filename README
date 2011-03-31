@@ -55,7 +55,10 @@ use all conversion scripts in the 'scripts' directory like this:
 
 API Documentation
 -----------------
-You can generate the API documentation with LuaDoc. However, LuaDoc has
+For convenience the branch 'gh-pages' contains automatically generated
+documentation, that is published at http://nichtich.github.com/lua-pica
+
+The API documentation is generated with LuaDoc. However, LuaDoc has
 not been updated since years. I added some patches, so you get get a
 fixed version of LuaDoc at https://github.com/nichtich/luadoc.
 
