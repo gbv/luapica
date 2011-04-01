@@ -95,6 +95,10 @@ end
 --   or a digit (<tt>0-9</tt>). An empty string is returned if no such 
 --   subfields exists (see <a href="#PicaField:has">PicaField:first</a>).
 -- @field ok returns whether the field has a tag and is not empty
+-- @field num
+-- @field tag
+-- @field occ
+-- @field full
 -- @field empty returns whether the field has no subfields (<tt>#f == 0</tt>)
 -- @class table
 -- @name PicaField
@@ -121,6 +125,9 @@ PicaField = {
         elseif key == 'empty' then
             return #rawget(field,'readonly').values == 0
 --            return #field == 0
+        elseif key == 'lev' then
+            local tag = rawget(field,'readonly').tag
+            return tag == '' and 0 or tonumber(tag:sub(1,1))
         elseif key == 'num' then
             local occ = rawget(field,'readonly').occ
             return occ == "" and 0 or tonumber(occ)
@@ -187,11 +194,15 @@ function PicaField.new( tag, occ, fields )
             end
         else -- only tag supplied (possibly with occurence indicator)
             _,_,tag,occ = tag:find('^(%d%d%d[A-Z@])(.*)$')
-            if occ ~= '' then
-                _,_,occ = occ:find('^/(%d%d)$')
-                if occ == '/00' then
-                    tag,occ = '',''
+            if tag then
+                if occ ~= '' then
+                    _,_,occ = occ:find('^/(%d%d)$')
+                    if occ == '/00' then
+                        tag,occ = '',''
+                    end
                 end
+            else
+                tag,occ = '',''
             end
         end
     end
@@ -214,7 +225,7 @@ function PicaField.new( tag, occ, fields )
 end
 
 --- Appends one or more subfields.
--- On failure adds nothing.
+-- On failure adds nothing or throws an error.
 -- @param code subfield code 
 --   (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>)
 --   or a line of PICA+ subfield, e.g. <tt>"$afoo$bbar"</tt>
@@ -255,7 +266,8 @@ function PicaField:append( code, value )
         end
 
         if sf == "" then
-            error( "invalid subfield code or data: "..code )
+             -- TODO: throw error but catch it
+             -- error( "invalid subfield code or data: "..code )
         else
             self:append(sf,value)
         end

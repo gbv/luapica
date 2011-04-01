@@ -22,6 +22,12 @@ function TestField:testNew()
     local f = PicaField.new()
     assertEquals( tostring(f), '' )
 
+    f = PicaField.new("'021A")
+    assert( not f.ok )
+
+    f:append('$.x') -- TODO: throw error?
+    assertEquals( tostring(f), '' )
+
     f = PicaField.new('021A')
     assertEquals( f.tag, '021A' )
     assertEquals( f.full, '021A' )
@@ -157,6 +163,9 @@ end
 function TestField:testOkAndEmpty()
     local f = PicaField.new()
     assertEquals( f.empty, true )
+    assertEquals( f.lev, 0 ) -- default level
+    assertEquals( f.num, 0 ) -- default occurrence number
+
     f:append( 'x','abc')
     assertEquals( f.ok, false )
     assertEquals( f.empty, false )
@@ -164,6 +173,8 @@ function TestField:testOkAndEmpty()
     f = PicaField.new('123A')
     assertEquals( f.ok, false )
     assertEquals( f.empty, true )
+    assertEquals( f.lev, 1 )
+    assertEquals( f.num, 0 )
 
     f:append( 'x','abc')
     assertEquals( f.ok, true )
@@ -214,6 +225,7 @@ function TestRecord:testNew()
     f = r["028A"] -- get first field
     assertEquals( f.tag, "028A" )
     assertEquals( f.num, 0 )
+    assertEquals( f.lev, 0 )
 
     f = r:first("028C/01")
     assertEquals( f.tag, "028C" )
