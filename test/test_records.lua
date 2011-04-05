@@ -77,6 +77,8 @@ function TestRecords:testFilter()
     assertEquals( #record:filter( '041A', function(f) return f.S == 's' end ), 5 )
     assertEquals( #record:filter( '041A', function(f) return f['8']:find('41') end ), 2 )
 
+    -- get field and filter it
+    assertEquals( record:first('007G'):join('','c','0'), 'DNB1009068466' )
 end
 
 function TestRecords:testGet()

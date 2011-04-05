@@ -15,7 +15,6 @@
 -- this may increase performance
 local string, table = string, table
 
-
 --- Returns a filter function based on a Lua pattern.
 -- The returned filter function removes all values that do not match the
 -- pattern. If the pattern contains a capture expression, each value is
@@ -49,7 +48,6 @@ formatfilter = function( format )
     end
 end
 
-
 -----------------------------------------------------------------------------
 --- Simply returns a value, optionally filtered by one or more functions.
 -- If a filter function returns true, the original value is returned.
@@ -80,7 +78,6 @@ local function table_concat( a, b )
     end
 end
 
-
 -----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields.
 -- This class overloads the following operators: 
@@ -94,21 +91,16 @@ end
 --   <i>c</i> where <i>c</i> can be a letter (<tt>a-z</tt> or <tt>A-Z</tt>) 
 --   or a digit (<tt>0-9</tt>). An empty string is returned if no such 
 --   subfields exists (see <a href="#PicaField:has">PicaField:first</a>).
--- @field ok returns whether the field has a tag and is not empty
--- @field num
--- @field tag
--- @field occ
--- @field full
--- @field empty returns whether the field has no subfields (<tt>#f == 0</tt>)
+-- @field ok (boolean) whether the field has a tag and is not empty
+-- @field tag (string) the tag without occurrence
+-- @field full (string) tag and occurrence combined
+-- @field occ (string) the occurrence as string
+-- @field num (number) the occurrence as number between 0 and 99
+-- @field lev (number) level 0, 1, or 2 (default is 0)
 -- @class table
 -- @name PicaField
 -----------------------------------------------------------------------------
 PicaField = {
-
-    -- # field
-    __len = function( field )
-        return #rawget(field,'readonly').values
-    end,
 
     -- field % locator
     __mod = function( field, locator )
@@ -119,28 +111,23 @@ PicaField = {
     -- field.key
     __index = function( field, key )
         if ( type(key) == 'number' ) then -- n'th value 
-            return rawget(field,'readonly').values[key]
+            return field[key]
+        elseif key == 'tag' or key=="occ" then
+            return rawget(field,'readonly')[key]
+        elseif key == 'ok' then
+            return field.tag ~= "" and #field > 0
         elseif key:match('^[a-zA-Z0-9]$') then -- first matching value
             return field:first(key)
-        elseif key == 'empty' then
-            return #rawget(field,'readonly').values == 0
---            return #field == 0
-        elseif key == 'lev' then
-            local tag = rawget(field,'readonly').tag
-            return tag == '' and 0 or tonumber(tag:sub(1,1))
         elseif key == 'num' then
             local occ = rawget(field,'readonly').occ
             return occ == "" and 0 or tonumber(occ)
+        elseif key == 'lev' then
+            local tag = rawget(field,'readonly').tag
+            return tag == '' and 0 or tonumber(tag:sub(1,1))
         elseif key == 'full' then
             return field:get_full()
-        elseif key == 'str' then
-            return tostring(field)
-        elseif key == 'ok' then
-            return field.tag ~= "" and #rawget(field,'readonly').values > 0
-        elseif key == 'tag' or key=="occ" then
-            return rawget(field,'readonly')[key]
         else
-            return PicaField[key]
+            return PicaField[key] -- method name
         end
     end,
 
@@ -156,10 +143,7 @@ PicaField = {
 
 -- implements 'field.full'
 function PicaField:get_full()
-    if self.tag == "" then
-        return ""
-    end
-    if self.occ == "" then
+    if self.tag == "" or self.occ == "" then
         return self.tag
     else
         return self.tag .. '/' .. self.occ
@@ -211,7 +195,6 @@ function PicaField.new( tag, occ, fields )
         readonly = { 
             tag = tag, 
             occ = occ,
-            values = { }, -- list of subfield values
             codes = { },  -- table of subfield codes to lists of positions
         }, 
     }
@@ -225,53 +208,58 @@ function PicaField.new( tag, occ, fields )
 end
 
 --- Appends one or more subfields.
--- On failure adds nothing or throws an error.
--- @param code subfield code 
---   (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>)
---   or a line of PICA+ subfield, e.g. <tt>"$afoo$bbar"</tt>
--- @param value subfield value. Must be a string.
-function PicaField:append( code, value )
-    assert( type(code) == "string", "field data must be string, got "..type(code) )
+-- Subfields can either be specified in PICA+ format or as pairs of subfield
+-- code (one character of <tt>[a-zA-Z0-9]</tt>) and subfield value. Empty
+-- subfield values (the empty string <tt>""</tt>) are ignored.
+-- @usage <tt>f:append("x","foo","y","bar")</tt>
+-- @usage <tt>f:append("$xfoo$ybar")</tt>
+function PicaField:append( ... )
+    local i = 1
 
-    if code:find("^[a-zA-Z0-9]$") then
+    local function appendsubfield( code, value )
+        assert( code:find("^[a-zA-Z0-9]$"), "invalid subfield code: "..code )
 
-        assert( type(value) == "string", "subfield value must be a string" )
         if value == "" then return end -- ignore empty subfields
 
-        local values = rawget(self,'readonly').values
-        table.insert( values, value )
+        table.insert( self, value )
 
         local codes = rawget(self,'readonly').codes
         if codes[code] then
-            table.insert( codes[code], #values )
+            table.insert( codes[code], #self )
         else
-            codes[code] = { #values }
-        end
-
-    else -- parse multiple subfields in PICA+ format
-    
-        local value = ""
-        local sf = ""
-        local pos = 1
-
-        for t, v in code:gfind('$(.)([^$]+)') do
-            if t == '$' then
-                value = value..'$'..v
-            else
-                if sf ~= "" then
-                    self:append(sf,value) 
-                end
-                sf, value = t, v
-            end
-        end
-
-        if sf == "" then
-             -- TODO: throw error but catch it
-             -- error( "invalid subfield code or data: "..code )
-        else
-            self:append(sf,value)
+            codes[code] = { #self }
         end
     end
+
+    repeat 
+        local code = arg[i]
+        assert( type(code) == "string", "field data must be string, got "..type(code) )
+
+        if code:sub(1,1) == "$" then
+            local value = ""
+            local sf = ""
+            local pos = 1
+
+            for t, v in code:gfind('$(.)([^$]+)') do
+                if t == '$' then
+                    value = value..'$'..v
+                else
+                    if sf ~= "" then
+                        appendsubfield(sf,value) 
+                    end
+                    sf, value = t, v
+                end
+            end
+
+            appendsubfield(sf,value)
+            i = i + 1
+        else
+            local value = arg[i+1]
+            assert( type(value) == "string", "subfield value must be a string" )
+            appendsubfield( code, value )
+            i = i + 2
+        end
+    until i > #arg
 end
 
 
@@ -319,9 +307,8 @@ end
 -- @return values possibly empty table of values
 -- @return errors either nil or a list of error messages
 function PicaField:get( locator, ... )
-    if type(locator) == nil and #arg == 0 then
-        -- return a table copy
-        return { unpack( rawget(self,'readonly').values ) }
+    if type(locator) == "nil" then
+        return { unpack( self ) } -- return a table copy
     end
     assert( type(locator) == "string", "locator must be string, got "..type(locator) )
 
@@ -345,14 +332,12 @@ function PicaField:get( locator, ... )
         return { }, { "subfield "..sf.." is repeated" }
     end
 
-    local values = rawget(self,'readonly').values
-
     if m == "" or m == "?" then
-        return { filtervalue( values[codes[1]], ...) }
+        return { filtervalue( self[codes[1]], ...) }
     else -- "*" or "+"
         local list, errors, p = { }
 	for _,p in ipairs(codes) do
-            local v = filtervalue( values[p], ...)
+            local v = filtervalue( self[p], ...)
             if v then
                 table.insert(list,v)
             end
@@ -399,27 +384,22 @@ end
 function PicaField:codes()
     local cs,code,list,pos = {}
     for code,list in pairs( rawget(self,'readonly').codes ) do
-	for _,pos in ipairs(list) do
-	    cs[pos] = code
-	end
+        for _,pos in ipairs(list) do
+            cs[pos] = code
+        end
     end
     return unpack(cs)
 end
-
---function PicaField:values()
---    return unpack( rawget(self,'readonly').values )
---end
 
 -- returns the whole field as string in readable PICA+ format.
 function PicaField:__tostring()
     local t,s = self.full,"";
 
     local codes = { self:codes() }
-    local values = rawget(self,'readonly').values
+    local i,v
 
-    for i = 1,#values do
-        local value = values[i]:gsub('%$','$$')
-        s = s..'$'..codes[i]..value
+    for i,v in ipairs(self) do
+        s = s..'$'..codes[i]..v:gsub('%$','$$')
     end
 
     if t ~= "" and s ~= "" then
@@ -438,7 +418,7 @@ end
 --   <li><tt>r % l</tt> returns whether locator <tt>p</tt> matches
 --       <tt>r</tt> (see <a href="#PicaRecord:has">PicaRecord:has</a>).
 -- </ul>
--- @field n (number) the <i>n</i>th field
+-- @field n (number) the <i>n</i>th field value
 -- @field locator (string) the first matching field or value
 --   (see <a href="#PicaRecord:first">PicaRecord:first</a>)
 -- @class table
@@ -446,12 +426,7 @@ end
 -----------------------------------------------------------------------------
 PicaRecord = {
 
-    -- #record
-    __len = function (record)
-        return record.size
-    end,
-
-    -- field % locator
+    -- record % locator
     __mod = function (record,locator)
         return record:has( locator )
     end,
@@ -595,6 +570,7 @@ function PicaRecord:all( field, subfield, filter )
     -- TODO: support field locators as in :first
     local list = { }
 
+    -- TODO: multiple fields, separated by '|'
     local tag, occ = self.parse_field_locator( field )
 
     if tag == nil or self.fields[ tag ] == nil then
@@ -642,41 +618,42 @@ end
 --        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
 --        <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A,
 --        <tt>rec["028A/01"]</tt> returns field 028A/01
-function PicaRecord:first( field, subfield )
+function PicaRecord:first( field, subfield, ... )
+    local filter, notfound
+   
+    if type(subfield) == "string" then
+        filter = {...}
+        notfound = ''
+    else
+        filter = {subfield,...}
+        notfound = PicaField.new()
+    end
+
     -- local tag
     -- TODO: /00 and filter
 
-    local dummy = function()
-        if subfield == nil then
-            return PicaField.new()
-        else
-            return ''
-        end
-    end
-    
     local tag, occ = self.parse_field_locator( field )
     if not tag then
-        return dummy()
+        return notfound
     end
 
     field = self.fields[ tag ]
     if field == nil then
-        return dummy()
+        return notfound
     end
-
 
     for n,f in pairs(field) do
         if occ == '*' or occ == f.occ or (occ == '00' and f.occ ~= '') then
-            if subfield == nil then
-                return f
+            if type(subfield) ~= "string" then
+                return f -- filterfield(f, unpack(filter))
             else
-                return f:first(subfield)
+                return f:first(subfield, unpack(filter))
             end
         end
     end
 
     -- not found
-    return dummy()
+    return notfound
 end
 
 --- Returns whether a given locator matches.

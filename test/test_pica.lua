@@ -25,9 +25,6 @@ function TestField:testNew()
     f = PicaField.new("'021A")
     assert( not f.ok )
 
-    f:append('$.x') -- TODO: throw error?
-    assertEquals( tostring(f), '' )
-
     f = PicaField.new('021A')
     assertEquals( f.tag, '021A' )
     assertEquals( f.full, '021A' )
@@ -44,7 +41,12 @@ function TestField:testNew()
 end
 
 function TestField:testAppend()
-    local f = PicaField.new()
+    local f,v = PicaField.new()
+
+    for _,v in ipairs({'$.x','$','x','_$xa','x$xa','xy'}) do
+        assertError( f.append, f, x )
+    end
+    assertEquals( tostring(f), '' )
 
     f:append( "a", "foo" )
     assertEquals( tostring(f), '$afoo' )
@@ -78,7 +80,24 @@ function TestField:testAppend()
 
     assertEquals( f['1'] , 'zz' )
     assertEquals( f[1] , 'foo' )
+    assertEquals( f[2] , '$' )
 
+end
+
+function TestField:testGet()
+    local f,v
+
+    -- get list of all values
+    f = PicaField.new()
+    v = f:get()
+    assertEquals( #v, 0 )
+    f:append('a','foo','x','bar')
+    v = f:get()
+    assertEquals( #v, 2 )
+    assertEquals( v.a, nil )
+    assertEquals( v[1], "foo" )
+
+    -- ...
 end
 
 function TestField:testHas()
@@ -96,10 +115,10 @@ function TestField:testLen()
     assertEquals( #f, 0 )
 
     f:append( 'x','abc')
-    -- assertEquals( #f, 1 ) -- FIXME
+    assertEquals( #f, 1 )
    
     f:append( '1','x')
-    -- assertEquals( #f, 2 ) -- FIXME
+    assertEquals( #f, 2 )
 end
 
 function TestField:testIter()
@@ -162,23 +181,23 @@ end
 
 function TestField:testOkAndEmpty()
     local f = PicaField.new()
-    assertEquals( f.empty, true )
+    assertEquals( f.ok, false )
     assertEquals( f.lev, 0 ) -- default level
     assertEquals( f.num, 0 ) -- default occurrence number
 
     f:append( 'x','abc')
     assertEquals( f.ok, false )
-    assertEquals( f.empty, false )
+    assertEquals( #f, 1 )
 
     f = PicaField.new('123A')
     assertEquals( f.ok, false )
-    assertEquals( f.empty, true )
+    assertEquals( #f, 0 )
     assertEquals( f.lev, 1 )
     assertEquals( f.num, 0 )
 
     f:append( 'x','abc')
     assertEquals( f.ok, true )
-    assertEquals( f.empty, false )
+    assertEquals( #f, 1 )
 end
 
 function TestField:testParsing()

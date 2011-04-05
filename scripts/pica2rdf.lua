@@ -33,18 +33,55 @@ function main(s)
     return tostring(ttl) .. "\n# "..#ttl.." triples"
 end
 
+
+function recordidentifiers(record)
+    local ids = { }
+
+    local eki = record:first('007G'):join('','c','0')
+    if eki ~= "" then 
+        table.insert(ids, "<urn:nbn:de:eki/eki:"..eki..">" )
+    end
+
+   -- VD16 Nummern
+
+   -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
+   local pat = "^[0-9]+:[0-9]+[A-Z]$"
+   -- TODO: 
+   --local vd17 = record:all('006Q|006W','0',patternfilter(pat))
+   local vd17 = record:all('006Q','0',patternfilter(pat))
+   table.insert(vd17, record:first('006W','0'))
+   for _,n in ipairs(vd17) do
+       if n ~= '' then
+           -- TODO: check normalization!
+           table.insert(ids, "<urn:nbn:de:vd17/" .. n .. ">")
+       end
+   end
+
+   -- VD18 (TODO)
+   --  local vd18 = record:first('006M$0'), 007S
+
+   -- OCLC-Nummer
+   local oclc = record:first('003O','0')
+   if (oclc ~= '') then
+   --    table.insert(ids,'info/') -- TODO
+   end
+
+   return ids
+end
+
 -------------------------------------------------------------------------------
 --- Transforms a bibliographic PICA+ record
 -------------------------------------------------------------------------------
 function bibrecord(record, ttl)
 
-    local eki = record:first('007G')
-    eki = eki['c']..eki['0']
-    if eki == "" then
-        ttl:warn("EKI not found")
-    else
-        ttl:subject( "<info/eki:"..eki..">" )
-        ttl:add( "dc:identifier", eki )
+    local i,id
+    for i,id in ipairs(recordidentifiers(record)) do
+        if i == 1 then
+            ttl:subject( id )
+        else
+            ttl:addlink( 'owl:sameAs', id )
+        end
+        -- ttl:add( "dc:identifier", eki )
     end
 
     ttl:addlink('a','dct:BibliographicResource')
@@ -71,6 +108,8 @@ function bibrecord(record, ttl)
         ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
     end
 
+
+    --- TODO: Digitalisat (z.B. http://nbn-resolving.org/urn:nbn:de:gbv:3:1-73723 )
 end
 
 --- Trim a string
@@ -132,6 +171,7 @@ Turtle = {
         frbr = 'http://purl.org/vocab/frbr/core#',
         skos = 'http://www.w3.org/2004/02/skos/core#',
         xsd  = 'http://www.w3.org/2001/XMLSchema#',
+        owl  = 'http://www.w3.org/2002/07/owl#',
     },
     literal_escape = {
         ['"']   = "\\\"",
