@@ -151,11 +151,27 @@
         </li>
 	
 	<li>
-	  ok: returns whether the field has a tag and is not empty
+	  ok: (boolean) whether the field has a tag and is not empty
         </li>
 	
 	<li>
-	  empty: returns whether the field has no subfields (<tt>#f == 0</tt>)
+	  tag: (string) the tag without occurrence
+        </li>
+	
+	<li>
+	  full: (string) tag and occurrence combined
+        </li>
+	
+	<li>
+	  occ: (string) the occurrence as string
+        </li>
+	
+	<li>
+	  num: (number) the occurrence as number between 0 and 99
+        </li>
+	
+	<li>
+	  lev: (number) level 0, 1, or 2 (default is 0)
         </li>
 	
 </ul>
@@ -228,7 +244,7 @@
 <ul>
 	
 	<li>
-	  n: (number) the <i>n</i>th field
+	  n: (number) the <i>n</i>th field value
         </li>
 	
 	<li>
@@ -377,25 +393,34 @@ Returns an ordered table of all matching values
 
 
 
-<dt><a name="PicaField:append"></a><strong>PicaField:append</strong>&nbsp;(code, value)</dt>
+<dt><a name="PicaField:append"></a><strong>PicaField:append</strong>&nbsp;(...)</dt>
 <dd>
-Appends one or more subfields. On failure adds nothing.
+Appends one or more subfields. Subfields can either be specified in PICA+ format or as pairs of subfield code (one character of <tt>[a-zA-Z0-9]</tt>) and subfield value. Empty subfield values (the empty string <tt>""</tt>) are ignored.
 
 
 <h3>Parameters</h3>
 <ul>
 	
 	<li>
-	  code: subfield code (<tt>a</tt> to <tt>z</tt> or <tt>0</tt> to <tt>9</tt>) or a line of PICA+ subfield, e.g. <tt>"$afoo$bbar"</tt>
-	</li>
-	
-	<li>
-	  value: subfield value. Must be a string.
+	  ...: 
 	</li>
 	
 </ul>
 
 
+
+<div>
+
+<h3>Usage</h3>
+<ul>
+	
+	<li><tt>f:append("x","foo","y","bar")</tt>
+	
+	<li><tt>f:append("$xfoo$ybar")</tt>
+	
+</ul>
+
+</div>
 
 
 
@@ -837,7 +862,7 @@ Returns another PicaRecord with selected fields. You can filter fields by tag (a
 
 
 
-<dt><a name="PicaRecord:first"></a><strong>PicaRecord:first</strong>&nbsp;(field, subfield)</dt>
+<dt><a name="PicaRecord:first"></a><strong>PicaRecord:first</strong>&nbsp;(field, subfield, ...)</dt>
 <dd>
 Returns the first matching field or subfield value
 
@@ -851,6 +876,10 @@ Returns the first matching field or subfield value
 	
 	<li>
 	  subfield: 
+	</li>
+	
+	<li>
+	  ...: 
 	</li>
 	
 </ul>
