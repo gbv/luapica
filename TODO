@@ -8,3 +8,7 @@
 - add to luarocks and luadist?
 
 concatenate operator (..) for fields and records
+
+## documentation
+
+* Adjust lib/picaconv.lua and https://github.com/nichtich/luapica/wiki/Konverter

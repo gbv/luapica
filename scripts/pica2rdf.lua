@@ -7,27 +7,29 @@ require 'pica'
 
 -------------------------------------------------------------------------------
 --- Main conversion
--- @param s a single record in PICA+ format (UTF-8)
+-- @param record a single record in PICA+ format (UTF-8)
 -- @return string RDF/Turtle serialization
-function main(s)
-    local record = PicaRecord.new( s )
+function main(record, source)
+    if type(record) == "string" then
+        record = PicaRecord.new(record)  
+    end
 
-    local type = record:first('002@','0')
-    if not type then
+    local t = record:first('002@','0')
+    if not t then
         return "# Type not found"
     end
 
     local err
     local ttl = Turtle.new()
 
-    if type:find('^[ABCEGHKMOSVZ]') then -- Bibliographic record
+    if t:find('^[ABCEGHKMOSVZ]') then -- Bibliographic record
         bibrecord(record,ttl)
-    elseif type:find('^Tp') then -- Person
+    elseif t:find('^Tp') then -- Person
         authority_person(record,ttl)
-    elseif type:find('^T') then -- other kind of authority 
+    elseif t:find('^T') then -- other kind of authority 
         authority(record,ttl)
     else
-        return "# Unknown record type: "..type
+        return "# Unknown record type: "..t
     end
 
     return tostring(ttl) .. "\n# "..#ttl.." triples"
@@ -42,31 +44,25 @@ function recordidentifiers(record)
         table.insert(ids, "<urn:nbn:de:eki/eki:"..eki..">" )
     end
 
-   -- VD16 Nummern
+    -- VD16 Nummern
 
-   -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
-   local pat = "^[0-9]+:[0-9]+[A-Z]$"
-   -- TODO: 
-   --local vd17 = record:all('006Q|006W','0',patternfilter(pat))
-   local vd17 = record:all('006Q','0',patternfilter(pat))
-   table.insert(vd17, record:first('006W','0'))
-   for _,n in ipairs(vd17) do
-       if n ~= '' then
-           -- TODO: check normalization!
-           table.insert(ids, "<urn:nbn:de:vd17/" .. n .. ">")
-       end
-   end
+    -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
+    local vd17 = record:all('006Q|006W','0',
+        patternfilter("^[0-9]+:[0-9]+[A-Z]$"), 
+        formatfilter("<urn:nbn:de:vd17/%s>")
+    )
+    tableconcat(ids, vd17)
 
-   -- VD18 (TODO)
-   --  local vd18 = record:first('006M$0'), 007S
+    -- VD18 (TODO)
+    --  local vd18 = record:first('006M$0'), 007S
 
-   -- OCLC-Nummer
-   local oclc = record:first('003O','0')
-   if (oclc ~= '') then
-   --    table.insert(ids,'info/') -- TODO
-   end
+    -- OCLC-Nummer
+    local oclc = record:first('003O','0')
+    if (oclc ~= '') then
+    --    table.insert(ids,'info/') -- TODO
+    end
 
-   return ids
+    return ids
 end
 
 -------------------------------------------------------------------------------

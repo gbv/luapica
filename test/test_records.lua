@@ -22,8 +22,10 @@ function TestRecords:testFirst()
     assertEquals( f['9'], '' )
     assertEquals( f.A, 'DE-101' )
 
-    f = record:first('041A/00')
-    assertEquals( f['9'], '106369393' )
+    for _i,loc in ipairs({'041A/00','041A/00|123A','123A|041A/00'}) do
+        f = record:first(loc)
+        assertEquals( f['9'], '106369393' )
+    end
 
 end
 
@@ -54,6 +56,14 @@ function TestRecords:testAll()
     f = record:all('041A/','8')
     assertEquals( #f, 1 )
 
+    f = record:all('003@|041A')
+    assertEquals( #f, 7 )
+
+    f = record:all('003@$0|006L$0')
+    assertEquals( #f, 2 )
+
+    f = record:all('003@|006L','0')
+    assertEquals( #f, 2 )
 end
 
 function TestRecords:testFilter()
@@ -81,10 +91,25 @@ function TestRecords:testFilter()
     assertEquals( record:first('007G'):join('','c','0'), 'DNB1009068466' )
 end
 
+function TestRecords:testLocator()
+    local r = PicaRecord.new()
+    local locators = {"|","123A$","|123A","123A/x","123A/1","123A/123","123A$x|003@"}
+    for _,loc in ipairs(locators) do
+        assertError( PicaRecord.all, r, loc )
+        assertError( PicaRecord.first, r, loc )
+    end
+    assertError( PicaRecord.all, r, "123@$x", "x" )
+    locators = {"123A/$x","001@","042Z|045Y","124B$x|003@$y"}
+    for _,loc in ipairs(locators) do
+        assert( r:all(loc) )
+        assert( r:first(loc) )
+    end
+end 
+
 function TestRecords:testGet()
     local record,f = self:loadRecord('01')
 
-    assertError(function() record:get({}) end)
+    assertError( PicaRecord.get, record, {} )
 end
 
 function TestRecords:testMap()
@@ -98,7 +123,8 @@ function TestRecords:testMap()
     }
 
     assertEquals( errors, nil )
-    assertEquals( dcrecord.title, 'Gleichspannungswandler hoher Leistungsdichte im Antriebsstrang von Kraftfahrzeugen' )
+    assertEquals( dcrecord.title, 
+      'Gleichspannungswandler hoher Leistungsdichte im Antriebsstrang von Kraftfahrzeugen' )
     assertEquals( dcrecord.language, 'ger' )
     assertEquals( #dcrecord.subject, 5 )
    
