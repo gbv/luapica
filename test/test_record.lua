@@ -1,17 +1,66 @@
 require "luaunit"
 require "pica"
 
-TestRecords = {}
+TestRecord = {}
 
-function TestRecords:loadRecord( n )
-    local filename = "test/data/test"..n..".pica"
+function TestRecord:loadRecord( n )
+    local filename = "test/data/"..n..".pica"
     local file = assert(io.open(filename,"r"))
     local record = PicaRecord.new( file:read('*all') )
     return record
 end
 
-function TestRecords:testFirst()
-    local record,f = self:loadRecord('01')
+function TestRecord:testNew()
+    local f,r = nil,PicaRecord.new()
+    
+    r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
+
+    f = r:first("028A")
+    assertEquals( f.tag, "028A" )
+    assertEquals( r[1], f ) -- get by position
+
+    f = r:first("029A")
+    assertEquals( f.tag, '' )
+
+    f = r["028A"] -- get first field
+    assertEquals( f.tag, "028A" )
+    assertEquals( f.num, 0 )
+    assertEquals( f.lev, 0 )
+
+    f = r:first("028C/01")
+    assertEquals( f.tag, "028C" )
+    assertEquals( f.occ, "01" )
+    assertEquals( f.num, 1 )
+
+    f = r["028C/01"]
+    assertEquals( f.tag, "028C" )
+
+    -- any occurence (required)
+    f = r["028C/00"]
+    assertEquals( f.tag, "028C" )
+
+    -- optional any occurence
+    f = r["028C"]
+    assertEquals( f.tag, "028C" )
+
+    -- no occurrence
+    f = r["028C/"]
+    assertEquals( f.tag, "" )
+
+    f = r["028A/"]
+    assertEquals( f.tag, "028A" )
+end
+
+function TestRecord:testAll()
+    local r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
+    local f = r['028A']
+    
+    --print(dump( f:all('d') ))
+    --print(dump( r:all('028A','d') ))
+end
+
+function TestRecord:testFirst()
+    local record,f = self:loadRecord('book1')
 
     -- get first field
 
@@ -29,8 +78,8 @@ function TestRecords:testFirst()
 
 end
 
-function TestRecords:testAll()
-    local record,f = self:loadRecord('01')
+function TestRecord:testAll()
+    local record,f = self:loadRecord('book1')
 
     -- without subfield
     f = record:all('041A')
@@ -66,8 +115,8 @@ function TestRecords:testAll()
     assertEquals( #f, 2 )
 end
 
-function TestRecords:testFilter()
-    local record = self:loadRecord('01')
+function TestRecord:testFilter()
+    local record = self:loadRecord('book1')
 
     assertEquals( #record:all('041A','8',patternfilter('41')), 2 )
     assertEquals( #record:all('041A','8',patternfilter('%d%d')), 5 )
@@ -82,16 +131,19 @@ function TestRecords:testFilter()
     assertEquals( list[1], "41" )
 
     --- filter fields
-    assertEquals( #record:filter( function(f) return f.tag == "041A" end), 6 )
-    assertEquals( #record:filter( function(f) return f['8'] ~= '' end ), 8 )
-    assertEquals( #record:filter( '041A', function(f) return f.S == 's' end ), 5 )
-    assertEquals( #record:filter( '041A', function(f) return f['8']:find('41') end ), 2 )
+    assertEquals( #record:all( function(f) return f.tag == "041A" end), 6 )
+    assertEquals( #record:all( function(f) return f['8'] ~= '' end ), 8 )
+
+    r = record:all( '041A', function(f) return f.S == 's' end )
+
+    assertEquals( #record:all( '041A', function(f) return f.S == 's' end ), 5 )
+    assertEquals( #record:all( '041A', function(f) return f['8']:find('41') end ), 2 )
 
     -- get field and filter it
     assertEquals( record:first('007G'):join('','c','0'), 'DNB1009068466' )
 end
 
-function TestRecords:testLocator()
+function TestRecord:testLocator()
     local r = PicaRecord.new()
     local locators = {"|","123A$","|123A","123A/x","123A/1","123A/123","123A$x|003@"}
     for _,loc in ipairs(locators) do
@@ -106,14 +158,14 @@ function TestRecords:testLocator()
     end
 end 
 
-function TestRecords:testGet()
-    local record,f = self:loadRecord('01')
+function TestRecord:testGet()
+    local record,f = self:loadRecord('book1')
 
     assertError( PicaRecord.get, record, {} )
 end
 
-function TestRecords:testMap()
-    local record = self:loadRecord('01')
+function TestRecord:testMap()
+    local record = self:loadRecord('book1')
 
      -- easy conversion from PICA+ to key-value structures
     local dcrecord, errors = record:map { 

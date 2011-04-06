@@ -1,14 +1,22 @@
-- more LuaDoc
-- agree on API to access fields and subfields
-- add small conversion examples (probably with a 'main' function)
-- publish as Lua Rock (see http://luarocks.org/repositories/rocks/)
-- maybe switch to another testing framework like http://fperrad.github.com/lua-TestMore/
-  or http://luaforge.net/projects/lunit/ instead of luaunit
-- enchance pattern filters with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html 
-- add to luarocks and luadist?
+## implementation
 
-concatenate operator (..) for fields and records
+* add function PicaField:copy
+* add concatenate operator (..) for fields and records
+* maybe enhance pattern filters with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html
+* review on API to access fields and subfields
 
 ## documentation
 
 * Adjust lib/picaconv.lua and https://github.com/nichtich/luapica/wiki/Konverter
+* add small conversion examples (probably with a 'main' function)
+* increase coverage of documentation
+
+## testing
+
+* maybe switch to another testing framework instead of luaunit
+** http://fperrad.github.com/lua-TestMore/
+** http://luaforge.net/projects/lunit/
+
+## distribution
+
+* add module to luarocks and luadist

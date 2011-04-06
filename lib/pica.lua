@@ -49,13 +49,18 @@ formatfilter = function( format )
 end
 
 --- Insert all values with integer keys from one table to another.
--- @param a the table to modify
--- @param b the table to concat to table a
-tableconcat = function( a, b )
+-- @param t the table to modify
+-- @param a the table to concat to table a
+table.append = function( t, a )
     local v
-    for _,v in ipairs(b) do
-        table.insert( a, v )
+    for _,v in ipairs(a) do
+        table.insert( t, v )
     end
+end
+
+--- Returns a string or nil if the string is empty
+string.notempty = function(self)
+    return #self == 0 and nil or self
 end
 
 -----------------------------------------------------------------------------
@@ -116,7 +121,7 @@ PicaField = {
             return rawget(field,'readonly')[key]
         elseif key == 'ok' then
             return field.tag ~= "" and #field > 0
-        elseif key:match('^[a-zA-Z0-9]$') then -- first matching value
+        elseif key:match('^[a-zA-Z0-9-][!%+%?%*]?$') then
             return field:first(key)
         elseif key == 'num' then
             local occ = rawget(field,'readonly').occ
@@ -274,16 +279,35 @@ end
 
 --- Returns the first value of a given subfield or an empty string.
 -- @param ... subfield code and/or optional filters
-function PicaField:first( ... )
+function PicaField:first( code, ... )
     -- this is the default for subfields locators
-    local v = self:values( ... ) -- TODO: implement more performant
-    return v or ""
+    if type(code) == "string" and not code:find("[!%+%?%*]$") then
+        code = code .. "?"
+    end
+    local list, errors = self:get( code, ... )
+    if errors then
+        return
+    end
+    if code:sub(-1) == "+" then
+        return unpack(list) -- may be nil
+    else
+        local v = list[1]
+        if code:sub(-1) == "*" then
+            if v then 
+                return unpack(list) 
+            else
+                return ""
+            end
+        else
+            return v or ""
+        end
+    end
 end
 
 --- Returns an ordered table of all matching values
 -- @param ... locator and/or filters
 function PicaField:all( code, ... )
-    if type(code) == "string" then
+    if type(code) == "string" and not code:find("[!%+%?%*]$") then
         code = code .. "*"
     end
     local list = self:get( code, ... )
@@ -320,8 +344,8 @@ function PicaField:get( locator, ... )
 
     -- no such subfield value
     if not codes then
-        if m == "!" or m == "*" then
-	    return { }, { "subfield "..sf.." not found" }
+        if m == "!" or m == "+" then
+            return { }, { "subfield "..sf.." not found" }
         else
             return { }
         end
@@ -363,8 +387,8 @@ function PicaField:collect( ... )
         else
             v, e = self:get( a )
         end
-        if e then tableconcat(errors,e) end
-        tableconcat(values,v)
+        if e then table.append(errors,e) end
+        table.append(values,v)
     end
 
     return values, ( next(errors) and errors or nil )
@@ -407,6 +431,10 @@ function PicaField:__tostring()
     else
         return t..s
     end
+end
+
+function PicaField:copy( locator )
+    error("Not implemented yet") -- TODO
 end
 
 -----------------------------------------------------------------------------
@@ -533,47 +561,6 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
     end
 end
 
-
---- Returns another PicaRecord with selected fields.
--- You can filter fields by tag (and occurence indicator) and/or by using
--- a filter method that is called for each field as <tt>filter(field)</tt>.
--- A field is only included in the returned record, if the filter method
--- returns true. Note that the returned record contains references to the
--- original fields instead of copies!
--- @param locator (optional) field locator
--- @param filter (optional) function that is called for each field
--- @see PicaRecord:apply
-function PicaRecord:filter( locator, ... )
-    local rec = PicaRecord.new()
-
-    local filters
-    local function apply_filters(field)
-        for _,f in ipairs(filters) do
-            if not f(field) then
-                return
-            end
-        end
-        rec:append(field)
-    end
-
-    if type(locator) == "string" then
-        local fields = self.fields[ locator ] -- TODO: support other locators
-        if fields then
-            filters = {...}
-            for _,field in ipairs(fields) do
-                apply_filters(field)
-            end
-        end
-    else
-        filters = {locator,...}
-        for _,field in ipairs(self) do
-            apply_filters(field)
-        end
-    end
-
-    return rec
-end
-
 --- Apply one or more function to each field of the record.
 -- In contrast to PicaRecord:filter, the return values of functions are ignored
 -- and nothing is returned.
@@ -591,12 +578,40 @@ end
 
 --- Returns all matching subfield values (as table) or all matching fields
 --  (as record).
--- @param field
+-- You can filter fields by tag (and occurence indicator) and/or by using
+-- a filter method that is called for each field as <tt>filter(field)</tt>.
+-- A field is only included in the returned record, if the filter method
+-- returns true. Note that the returned record contains references to the
+-- original fields instead of copies!
+-- @param field (optional) field locator
 -- @param subfield
 -- @param ... function that is applied to each value as filter
--- @return table
+-- @return table or PicaRecord
+-- @usage r:all('021A')
+-- @see PicaRecord:apply
 function PicaRecord:all( field, subfield, ... )
-    local locators, wantrecord, filters 
+    local locators, wantrecord, filters, result
+
+    local function append_field(field)
+        for _,f in ipairs(filters) do
+            if not f(field) then
+                return
+            end
+        end
+        result:append(field)
+    end
+
+    -- filter all fields
+    if type(field) ~= "string" then
+        filters = {field, subfield, ...}
+        result = PicaRecord.new()
+        for _,field in ipairs(self) do
+            append_field(field)
+        end
+        return result
+    end
+
+    locators, wantrecord, filters 
         = self.parse_field_locator( field, subfield, ... )
 
     if wantrecord then
@@ -615,8 +630,7 @@ function PicaRecord:all( field, subfield, ... )
             local f
             for _,f in ipairs( fields ) do
                 if check_occ(f) then
-                    --table.insert( result, f )
-                    result:append(f)
+                    append_field(f)
                 end
             end
         else 
@@ -644,6 +658,7 @@ function PicaRecord:all( field, subfield, ... )
 
     return result
 end
+
 
 --- Returns the first matching field or subfield value
 -- @param field locator of a field (<tt>AAAA</tt> or <tt>AAAA/</tt>
@@ -738,5 +753,3 @@ function PicaRecord:map( map )
     end
     return result, errors
 end
-
-

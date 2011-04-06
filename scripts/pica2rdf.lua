@@ -44,21 +44,22 @@ function recordidentifiers(record)
         table.insert(ids, "<urn:nbn:de:eki/eki:"..eki..">" )
     end
 
-    -- VD16 Nummern
+    -- VD16 Nummern: TODO
 
     -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
     local vd17 = record:all('006Q|006W','0',
         patternfilter("^[0-9]+:[0-9]+[A-Z]$"), 
         formatfilter("<urn:nbn:de:vd17/%s>")
     )
-    tableconcat(ids, vd17)
+    table.append(ids, vd17)
 
     -- VD18 (TODO)
     --  local vd18 = record:first('006M$0'), 007S
 
-    -- OCLC-Nummer
+    -- OCLC-Nummer (TODO): "info:oclcnum/"
     local oclc = record:first('003O','0')
     if (oclc ~= '') then
+      -- info:oclcnum/
     --    table.insert(ids,'info/') -- TODO
     end
 
@@ -93,17 +94,54 @@ function bibrecord(record, ttl)
 
     ttl:add( "dct:issued", record:first('011@','a'), 'xsd:gYear' ) -- TODO: check datatype
 
+    ---------------------------------------------------------------------------
+    -- Sacherschließung
+    ---------------------------------------------------------------------------
+    -- 5056-5058 = 045V,045W,045Y : SSG-Angaben (TODO)
 
-    local bklinks = record:all('045Q','8',patternfilter('(%d%d\.%d%d)'))
-    for _,notation in pairs(bklinks) do
-        ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' )
-    end
+    -- 5060 = 045X *: Notation eines Klassifikationssystems (TODO)
 
+    -- 5080 = 045U *: ZDB-Notation (TODO)
+
+    -- 5090 = 045T *: RVK (TODO)
+
+    -- 51xx = 041A : RSWK-Ketten (derzeit nicht als Kette ausgewertet)
     local swd = record:all('041A','8',patternfilter('D\-ID:%s*(%d+)'))
     for _,swdid in ipairs(swd) do
         ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
     end
 
+
+    -- 54xx = 045H : DDC-Notation
+    record:all('045H',function(f)
+        local edition = f:first('e!',patternfilter("^DDC(%d+)"))
+        local notation = f["a!"]
+        if edition and notation then
+            local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
+            ttl:addlink( 'dc:subject', uri )
+        end
+    end)
+
+    -- 5010 = 045F : DDC
+    record:all('045F',function(f)
+        local edition = f:first('e!',patternfilter("^DDC(%d+)"))
+        f:all("a",function(notation)
+            local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
+            ttl:addlink( 'dc:subject', uri )
+        end)
+    end)
+
+    -- 5500 = 044A *: LoC Subject headings
+    -- 5510 = 044C *: Medical subject headings
+    -- 5520 = 044E *: PRECIS
+    -- 5530 = 044F *: DDB-Schlagwörter bis 1986
+    -- 5540 = 044G *: British Library subject headings
+    -- ...
+
+    -- 530x = 045Q : Basisklassifikation
+    record:all('045Q','8',patternfilter('(%d%d\.%d%d)'),function(notation)
+        ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' )
+    end)
 
     --- TODO: Digitalisat (z.B. http://nbn-resolving.org/urn:nbn:de:gbv:3:1-73723 )
 end
@@ -129,7 +167,7 @@ function  authority_person(rec,ttl)
     ttl:add( "dc:identifier", rec:first('003@','0' ))
 
     local name = rec:first('028A'):join(' ', -- join with space
-      'e','d','a','5',    -- selected subfields in this order
+      'e','d','a','5',              -- selected subfields in this order
       { 'f', formatfilter('(%s)') } -- also with filters
     )
 

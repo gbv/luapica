@@ -1,6 +1,6 @@
 require "luaunit"
 
-require "test_pica"
-require "test_records"
+require "test_field"
+require "test_record"
 
 LuaUnit:run(unpack(arg))

@@ -33,6 +33,8 @@ function TestField:testNew()
     f = PicaField.new('028C','01')
     assertEquals( f.tag, '028C' )
     assertEquals( f.occ, '01' )
+    assertEquals( f.num, 1 )
+    assertEquals( f.lev, 0 )
     assertEquals( f.full, '028C/01' )
     assertEquals( tostring(f), '028C/01' )
 
@@ -85,7 +87,7 @@ function TestField:testAppend()
 end
 
 function TestField:testGet()
-    local f,v
+    local f,v,l
 
     -- get list of all values
     f = PicaField.new()
@@ -97,7 +99,30 @@ function TestField:testGet()
     assertEquals( v.a, nil )
     assertEquals( v[1], "foo" )
 
-    -- ...
+    -- get first
+    assertEquals( f["a"], "foo" )
+    assertEquals( f["a*"], "foo" )
+    assertEquals( f["a?"], "foo" )
+    assertEquals( f["a!"], "foo" )
+    assertEquals( f["a+"], "foo" )
+
+    assertEquals( f["y"], "" )
+    assertEquals( f["y*"], "" )
+    assertEquals( f["y?"], "" )
+    assertEquals( f["y!"], nil )
+    assertEquals( f["y+"], nil )
+
+    f:append('a','bar')
+    local a,b = f["a"]
+    assertEquals( a, "foo" ); assertEquals( b, nil )
+    a,b = f["a?"]
+    assertEquals( a, "foo" ); assertEquals( b, nil )
+    a,b = f["a!"]
+    assertEquals( a, nil ); assertEquals( b, nil )
+    a,b = f["a*"]
+    --assertEquals( a, "foo" ); assertEquals( b, "bar" )
+    --a,b = f["a+"]
+    --assertEquals( a, "foo" ); assertEquals( b, "bar" )
 end
 
 function TestField:testHas()
@@ -224,56 +249,4 @@ function TestField:testReadonly()
     assertError( function() f.occ = "02" end )    
     assertError( function() f.num = 2 end )    
     assertError( function() f.full = "123X/02" end )    
-end
-
-
-TestRecord = {}
-
-function TestRecord:testNew()
-    local f,r = nil,PicaRecord.new()
-    
-    r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
-
-    f = r:first("028A")
-    assertEquals( f.tag, "028A" )
-    assertEquals( r[1], f ) -- get by position
-
-    f = r:first("029A")
-    assertEquals( f.tag, '' )
-
-    f = r["028A"] -- get first field
-    assertEquals( f.tag, "028A" )
-    assertEquals( f.num, 0 )
-    assertEquals( f.lev, 0 )
-
-    f = r:first("028C/01")
-    assertEquals( f.tag, "028C" )
-    assertEquals( f.occ, "01" )
-    assertEquals( f.num, 1 )
-
-    f = r["028C/01"]
-    assertEquals( f.tag, "028C" )
-
-    -- any occurence (required)
-    f = r["028C/00"]
-    assertEquals( f.tag, "028C" )
-
-    -- optional any occurence
-    f = r["028C"]
-    assertEquals( f.tag, "028C" )
-
-    -- no occurrence
-    f = r["028C/"]
-    assertEquals( f.tag, "" )
-
-    f = r["028A/"]
-    assertEquals( f.tag, "028A" )
-end
-
-function TestRecord:testAll()
-    local r = PicaRecord.new("028A $dgiven1$dgiven2$asur$$name\n028C/01 $0foo")
-    local f = r['028A']
-    
-    --print(dump( f:all('d') ))
-    --print(dump( r:all('028A','d') ))
 end
