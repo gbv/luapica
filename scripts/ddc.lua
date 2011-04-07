@@ -8,8 +8,6 @@ function main(record)
         record = PicaRecord.new(record)
     end
 
-record:append(PicaField.new("045H $eDDC22ger$a791.430943$c791.4309$g43$ADNB"))   
-
     local uris = { }
     local function add_ddc( notation, edition )
         -- here we could further validate ddc notation and edition
@@ -27,7 +25,7 @@ record:append(PicaField.new("045H $eDDC22ger$a791.430943$c791.4309$g43$ADNB"))
     record:all('045H',function(f)
         local edition = f:first('e!',patternfilter("^DDC(%d+)"))
         local notation = f["a!"]
-        -- TODO: collect values dfghijklm and create syntetic notations
+        -- TODO: collect subfield values dfghijklm and create syntetic notations if required
         add_ddc( notation, edition )
     end)
 
@@ -41,7 +39,7 @@ record:append(PicaField.new("045H $eDDC22ger$a791.430943$c791.4309$g43$ADNB"))
         end)
     end)
 
-    -- Note that HEBIS-PICA has other PICA+ tags for DDC. 
+    -- Note that HEBIS-PICA has other PICA+ tags for DDC (not tested yet). 
     -- SWB uses a subset of GBV format (045F without $e).
 
     return table.concat( uris, "\n" )
