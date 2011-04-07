@@ -7,7 +7,9 @@ function main(record)
     if type(record) == "string" then
         record = PicaRecord.new(record)
     end
-   
+
+record:append(PicaField.new("045H $eDDC22ger$a791.430943$c791.4309$g43$ADNB"))   
+
     local uris = { }
     local function add_ddc( notation, edition )
         -- here we could further validate ddc notation and edition
@@ -19,12 +21,13 @@ function main(record)
         table.insert( uris, uri )
     end
 
-    -- 54xx = 045H : DDC-Notation
+    -- 54xx = 045H : DDC-Notation analytisch
     -- Example: 045H $a629.2293
     -- Example: 045H $eDDC22ger$a791.430943$c791.4309$g43$ADNB
     record:all('045H',function(f)
         local edition = f:first('e!',patternfilter("^DDC(%d+)"))
         local notation = f["a!"]
+        -- TODO: collect values dfghijklm and create syntetic notations
         add_ddc( notation, edition )
     end)
 

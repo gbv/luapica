@@ -40,6 +40,19 @@ function TestField:testNew()
 
     f = PicaField.new('028C/02' )
     assertEquals( f.full, '028C/02' )
+
+    f = PicaField.new("123X/02 $foo$bar$doz")
+    local a,p = { 
+        {"123X/02$foo$bar$doz"},
+        {"123X/02","$foo$bar$doz"},
+        {"123X","02","$foo$bar$doz"},
+        {"123X","02","f","oo","b","ar","d","oz"},
+        {"123X/02","f","oo","b","ar","d","oz"},
+    }
+    for _,p in ipairs(a) do
+        local g = PicaField.new( unpack(p) )
+        assertEquals( tostring(g), tostring(f) )
+    end
 end
 
 function TestField:testAppend()
@@ -84,6 +97,8 @@ function TestField:testAppend()
     assertEquals( f[1] , 'foo' )
     assertEquals( f[2] , '$' )
 
+    f = PicaField.new("021A"):append("$foo"):append("$bar")
+    assertEquals( tostring(f), "021A $foo$bar" )
 end
 
 function TestField:testGet()

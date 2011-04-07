@@ -162,14 +162,18 @@ PicaField = {
 --        or tag and occurence (e.g. <tt>009P/09</tt>)
 --        or a full line of PICA+ format to parse.
 -- @param occ optional occurence indicator (<tt>01</tt> to <tt>99</tt>)
-function PicaField.new( tag, occ, fields )
+function PicaField.new( tag, occ, ... )
     tag = tag or ''
     occ = occ or ''
 
+    local fields
     local d1, d2 = tag:find('%s*%$')
+
     if d1 then
         fields = tag:sub(d2)
         tag = d1 > 1 and tag:sub(1,d1-1) or ''
+    elseif occ:match('^%$') or occ:match("^[a-zA-Z0-9]$") then
+        fields, occ = occ, ''
     end
 
     if tag ~= '' then
@@ -203,7 +207,9 @@ function PicaField.new( tag, occ, fields )
     setmetatable(sf,PicaField)
 
     if fields and fields ~= "" then
-        sf:append(fields)
+        sf:append( fields, ...)
+    elseif ( ... ) then
+        sf:append( ... )
     end
 
     return sf
@@ -215,6 +221,7 @@ end
 -- subfield values (the empty string <tt>""</tt>) are ignored.
 -- @usage <tt>f:append("x","foo","y","bar")</tt>
 -- @usage <tt>f:append("$xfoo$ybar")</tt>
+-- @return the field
 function PicaField:append( ... )
     local i = 1
 
@@ -262,6 +269,8 @@ function PicaField:append( ... )
             i = i + 2
         end
     until i > #arg
+
+    return self
 end
 
 
@@ -371,6 +380,7 @@ function PicaField:get( locator, ... )
 end
 
 --- Concatenate table of subfield values.
+-- TODO: check this and compare with :values :map etc.
 -- @see PicaField:get
 -- @see PicaField:join
 function PicaField:collect( ... )
