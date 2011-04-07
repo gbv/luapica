@@ -130,7 +130,11 @@ PicaField = {
             local tag = rawget(field,'readonly').tag
             return tag == '' and 0 or tonumber(tag:sub(1,1))
         elseif key == 'full' then
-            return field:get_full()
+            if field.tag == "" or field.occ == "" then
+                return field.tag
+            else
+                return field.tag .. '/' .. field.occ
+            end
         else
             return PicaField[key] -- method name
         end
@@ -139,22 +143,15 @@ PicaField = {
     -- field[ key ] = value    
     -- field.key = value    
     __newindex = function( field, key, value )
-        if field.readonly[key] or key == "full" or key == "num" then
+        if field.readonly[key] or PicaField[key] then
             error("field."..key.." is read-only")
         end
         rawset(field,key,value)
     end,
+
+    -- read-only pseudo fields
+    full = true, num = true, lev = true, ok = true
 }
-
--- implements 'field.full'
-function PicaField:get_full()
-    if self.tag == "" or self.occ == "" then
-        return self.tag
-    else
-        return self.tag .. '/' .. self.occ
-    end
-end
-
 
 --- Creates a new PICA+ field.
 -- The newly created field will have no subfields. The optional occurence 
@@ -400,26 +397,26 @@ function PicaField:join( sep, ... )
     return table.concat( self:collect( ... ), sep )
 end
 
---- Returns an ordered list of subfield codes.
+--- Returns an ordered table of subfield codes.
 -- For instance for a field <tt>$xfoo$ybar$xdoz</tt> this method returns the
--- list <tt>'x','y','x'</tt>. 
--- @use <tt>a,b,c = field:codes()  -- get as list</tt>
--- @use <tt>cs = { field:codes() } -- get as table</tt>
+-- table <tt>{'x','y','x'}</tt>. 
+-- @use <tt>cs = field:codes()             -- get as table</tt>
+-- @use <tt>a,b,c = unpack(field:codes())  -- get as list</tt>
 function PicaField:codes()
-    local cs,code,list,pos = {}
-    for code,list in pairs( rawget(self,'readonly').codes ) do
+    local codes,c,list,pos = {}
+    for c,list in pairs( rawget(self,'readonly').codes ) do
         for _,pos in ipairs(list) do
-            cs[pos] = code
+            codes[pos] = c
         end
     end
-    return unpack(cs)
+    return codes
 end
 
 -- returns the whole field as string in readable PICA+ format.
 function PicaField:__tostring()
     local t,s = self.full,"";
 
-    local codes = { self:codes() }
+    local codes = self:codes()
     local i,v
 
     for i,v in ipairs(self) do
@@ -433,8 +430,45 @@ function PicaField:__tostring()
     end
 end
 
-function PicaField:copy( locator )
-    error("Not implemented yet") -- TODO
+-----------------------------------------------------------------------------
+--- Copies a field.
+-- @usage <tt>field:copy()</tt> full copy with tag, occ and all subfields
+-- @usage <tt>field:copy("123@")</tt> copy subfields but modify tag
+-- @usage <tt>field:copy("123@/01")</tt> copy subfields but modify tag and occ
+-- @usage <tt>field:copy("a-d")</tt> copy tag, occ, and selected subfields
+-- @usage <tt>field:copy("")</tt> copy only all subfields
+function PicaField:copy( full, subfields )
+
+    if type(full) == "string" then
+        if type(subfields) == "string" then
+        elseif full == "" or full:match("^%d%d%d[A-Z@]$") or 
+            full:match("^%d%d%d[A-Z@]/%d%d$") then
+            subfields = nil 
+        else
+            subfields = full  
+            full = self.full
+        end
+    else
+        full = self.full
+        subfields = nil
+    end
+
+    if subfields then
+        assert( subfields:match("^%^?[a-zA-Z0-9-]+$"), 
+            "illformed subfield locator: "..subfields )
+        subfields = "["..subfields.."]"
+    end
+
+    local codes = self:codes()
+    local f = PicaField.new( full )
+
+    for i,v in ipairs(self) do
+        if not subfields or codes[i]:match(subfields) then
+            f:append( codes[i], v )
+        end
+    end
+
+    return f
 end
 
 -----------------------------------------------------------------------------

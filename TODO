@@ -1,6 +1,5 @@
 ## implementation
 
-* add function PicaField:copy
 * add concatenate operator (..) for fields and records
 * maybe enhance pattern filters with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html
 * review on API to access fields and subfields
@@ -20,3 +19,4 @@
 ## distribution
 
 * add module to luarocks and luadist
+

@@ -146,6 +146,29 @@ function TestField:testLen()
     assertEquals( #f, 2 )
 end
 
+function TestField:testCopy()
+    local e,f
+    
+    -- full copy
+    for _,f in ipairs({"018A","123@/03","212I $xy$zw"}) do
+        f = PicaField.new(f)
+        local s = tostring(f)
+        e = f:copy()
+        f:append("$foo") -- modify original
+        assertEquals( tostring(e), s )
+    end
+
+    f = PicaField.new("123A $foo$bar$doz")
+    assertEquals( tostring(f:copy("234@")), "234@ $foo$bar$doz" )
+    assertEquals( tostring(f:copy("234@","fxz")), "234@ $foo" )
+    assertEquals( tostring(f:copy("234@","d-f")), "234@ $foo$doz" )
+    assertEquals( tostring(f:copy("")), "$foo$bar$doz" )
+    assertEquals( tostring(f:copy("b")), "123A $bar" )
+    assertEquals( tostring(f:copy("^b")), "123A $foo$doz" )
+
+    assertError( PicaField.copy, f, "." )
+end
+
 function TestField:testIter()
     local f = PicaField.new()
     local list = {
@@ -198,10 +221,12 @@ function TestField:testMap()
     assertEquals( type(e), "table" )
 end
 
-function TestField:codes()
+function TestField:testCodes()
     local f = PicaField.new('123A $xfoo$ybar$xdoz')
-    local a,b,c,d = f:codes()
+    local a,b,c,d = unpack(f:codes())
     assert( a == 'x' and b == 'y' and c == 'x' and d == nil )
+    a = PicaField.new():codes()
+    assert( type(a) == "table" and #a == 0 )
 end
 
 function TestField:testOkAndEmpty()
@@ -249,4 +274,6 @@ function TestField:testReadonly()
     assertError( function() f.occ = "02" end )    
     assertError( function() f.num = 2 end )    
     assertError( function() f.full = "123X/02" end )    
+    assertError( function() f.lev = 2 end )    
+    assertError( function() f.ok = true end )    
 end
