@@ -35,11 +35,10 @@ function main(record, source)
     return tostring(ttl) .. "\n# "..#ttl.." triples"
 end
 
-
 function recordidentifiers(record)
     local ids = { }
 
-    local eki = record:first('007G'):join('','c','0')
+    local eki = table.concat( record:first('007G'):map({'c','0'}), '' )
     if eki ~= "" then 
         table.insert(ids, "<urn:nbn:de:eki/eki:"..eki..">" )
     end
@@ -149,6 +148,28 @@ end
 --- Trim a string
 function trim(s) return s:match'^%s*(.*%S)' or '' end
 
+--- Collect and join subfield values (you must not use "+" and "*" flags).
+function fjoin( field, sep, ... )
+    local t = field:map({...})
+    return table.concat({table.unpack(t)} , sep )
+end
+
+
+-- useful dumper method
+function dump(o)
+    if type(o) == 'table' then
+        local s = '{ '
+        for k,v in pairs(o) do
+                if type(k) ~= 'number' then k = '"'..k..'"' end
+                s = s .. '['..k..'] = ' .. dump(v) .. ','
+        end
+        return s .. '} '
+    else
+        return tostring(o)
+    end
+end
+
+
 -------------------------------------------------------------------------------
 --- Transforms a PICA+ authority record about a person
 -------------------------------------------------------------------------------
@@ -166,10 +187,10 @@ function  authority_person(rec,ttl)
 
     ttl:add( "dc:identifier", rec:first('003@','0' ))
 
-    local name = rec:first('028A'):join(' ', -- join with space
+    local name = rec:first('028A'):join(' ',{
       'e','d','a','5',              -- selected subfields in this order
       { 'f', formatfilter('(%s)') } -- also with filters
-    )
+    })
 
     if name ~= '' then
         ttl:add("skos:prefLabel",name) 

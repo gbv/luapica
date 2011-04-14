@@ -1,11 +1,13 @@
 .PHONY: test doc update-doc clean rockspec
 
+SCRIPTS=scripts/pica2rdf.lua scripts/ddc.lua
+
 test:
 	@export LUA_PATH='$(CURDIR)/lib/?.lua;$(CURDIR)/test/?.lua' && lua test/run_tests.lua
 
 doc:
 	@rm -rf doc
-	luadoc -d doc lib/*.lua scripts/*.lua
+	luadoc -d doc lib/*.lua $(SCRIPTS)
 
 update-doc: doc
 	./gh-pages/update

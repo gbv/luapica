@@ -35,5 +35,5 @@
     nametype = f:first('f',formatfilter("(%s)"))
 
     print( f:join(' ',     -- join selected subfields, separated by space
-      'e','d','a','5',     -- collect these subfields (if given) in this order
-      { 'f', formatfilter('(%s)') } )) -- also with filters
+      {'e','d','a','5',     -- collect these subfields (if given) in this order
+       { 'f', formatfilter('(%s)') } }) ) -- also with filters

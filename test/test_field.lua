@@ -77,9 +77,6 @@ function TestField:testAppend()
     f:append( "a", "foo" )
     assertEquals( tostring(f), '$afoo' )
 
-    local v = f:values('a')
-    assertEquals( v , 'foo' )
-
     v = f:first('b')
     assertEquals( v , nil )
 
@@ -89,13 +86,18 @@ function TestField:testAppend()
     f:append( "a", "bar" )
     assertEquals( tostring(f), '$afoo$b$$$abar' )
     
-    local a,b,c = f:values('a')
+    local a,b,c = f:all('a*')
     assertEquals( a , 'foo' )
     assertEquals( b , 'bar' )
     assertEquals( c , nil )
 
-    v = f:first('b')
-    assertEquals( v , '$' )
+    a,b,c = f:all()
+    assertEquals( a , 'foo' )
+    assertEquals( b , '$' )
+    assertEquals( c , 'bar' )
+
+    assertEquals( f:first() , 'foo' )
+    assertEquals( f:first('b') , '$' )
 
     -- short syntax
     assertEquals( f['b'] , '$' )
@@ -113,14 +115,13 @@ function TestField:testAppend()
 end
 
 function TestField:testGet()
-    local f,v,l
+    local f,v,l = PicaField.new()
 
-    -- get list of all values
-    f = PicaField.new()
-    v = f:get()
-    assertEquals( #v, 0 )
+    assertEquals( #f:get(), 0 )
+
     f:append('a','foo','0','bar')
-    v = f:get()
+
+    v = f:get() -- get all
     assertEquals( #v, 2 )
     assertEquals( v[1], "foo" )
     assertEquals( v[2], "bar" )
@@ -154,7 +155,7 @@ function TestField:testGet()
     assertEquals( f.y, nil )
     assertEquals( f.y_, "" )
 
-    -- get repeated field
+    -- get repeated field 
     f:append("0","doz")
     local t = {
         ["0"] = {"bar",nil},
@@ -170,9 +171,16 @@ function TestField:testGet()
     }
     local q,r
     for q,r in pairs(t) do
-        local a,b = f:first(q) -- f[q] would only return one value!
-        assertEquals( a, r[1] ); 
-        assertEquals( b, r[2] );
+        -- first
+        local a,b = f:first(q)
+        assertEquals( a, r[1] )
+        assertEquals( b, nil )
+        -- all
+        if q ~= "0" and q ~= "0_" then
+            a,b = f:all(q)
+            assertEquals( a, r[1] )
+            assertEquals( b, r[2] )
+        end
     end
 end
 
@@ -241,8 +249,6 @@ function TestField:testFilter()
     assertEquals( f:first('f'), "foo" )
 
     assertEquals( f:first('f',formatfilter("")), nil )
-    --assertEquals( f:first('f',formatfilter("foo")), "foo" )
-
     assertEquals( f:first('f',formatfilter("(%s)")), "(foo)" )
     assertEquals( f:first('f',formatfilter("x")), "x" )
     assertEquals( f:first('g',formatfilter("x")), nil )
@@ -255,15 +261,23 @@ function TestField:testMap()
     local m = f:get("f")
     assertEquals( m[1], "foo" )
 
---[[TODO
-    local m,e = f:collect("d","f","x")
-    assertEquals( e, nil )
+    local m,e = f:map({"d*","f","x"})
     assertEquals( #m, 2 )
+    assertEquals( type(m[1]), "table" )
+    assertEquals( type(m[2]), "string" )
+    assertEquals( e, nil )
 
-    m,e = f:collect("d*","f","x!")
-    assertEquals( #m, 3 )
+    m,e = f:map({"d","f!","x!"})
+    assertEquals( #m, 2 )
+    assertEquals( type(m[1]), "string" )
+    assertEquals( type(m[2]), "string" )
     assertEquals( type(e), "table" )
---]]
+    assert( e[3] )
+
+    -- join on sparse array
+    f = PicaField.new("028A $dEmma$aGoldman")
+    m = f:join(' ',{'e','d','a','5'})
+    assertEquals( m, "Emma Goldman")
 end
 
 function TestField:testCodes()

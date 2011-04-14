@@ -140,7 +140,8 @@ function TestRecord:testFilter()
     assertEquals( #record:all( '041A', function(f) return f['8_']:find('41') end ), 2 )
 
     -- get field and filter it
-    assertEquals( record:first('007G'):join('','c','0'), 'DNB1009068466' )
+    t = record:first('007G'):map({'c','0'})
+    assertEquals( table.concat( t, '' ), 'DNB1009068466' )
 end
 
 function TestRecord:testLocator()

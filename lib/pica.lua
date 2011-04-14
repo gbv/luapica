@@ -272,54 +272,36 @@ function PicaField:append( ... )
 end
 
 -- Inserts a default flag, unless a flag is given.
-function PicaField.defaultFlag( code, default )
-    if type(code) ~= "string" then
-        return code, ""
+function PicaField:getFlagged( default, code, ... )
+    if type(code) == "string" then
+        local _,_,c,f,s = code:find("^([^!%+%?%*_]*)([!%+%?%*]?)(_?)$")
+        if f == "" then
+            f = default
+            code = c..f..s
+        end
     end
-    local _,_,c,f,s = code:find("^([^!%+%?%*_]*)([!%+%?%*]?)(_?)$")
-    if f == "" then
-        f = default
-        code = c..f..s
-    end
-    return code, f 
+    return self:get( code, ... )
 end
 
 --- Returns the first value of a given subfield or an empty string.
 -- @param ... subfield code and/or optional filters
 function PicaField:first( code, ... )
-    local code, flag = PicaField.defaultFlag(code,'?')
-    local list = self:get( code, ... )
-    if flag == "+" or flag == "*" then
-        return unpack(list)
-    else
-        return list[1]
-    end
+    local list = self:getFlagged( '?', code, ... )
+    return list[1]
 end
 
---- Returns an ordered table of all matching values
+--- Returns a list of all matching values
 -- @param ... locator and/or filters
+-- @usage <tt>x,y,z = field:all()</tt> 
+-- @usage <tt>n = field:all('a',patternfilter('^%d+$'))</tt>
 function PicaField:all( code, ... )
-    local code, flag = PicaField.defaultFlag(code,'*')
-    local list = self:get( code, ... )
-    return list
-end
-
---- Returns a list of subfield values.
--- Calling this method as <tt>field:values(...)</tt> is equivalent to calling
--- <tt>unpack(field:all(...))</tt>. In contrast to <tt>all</tt> and 
--- <tt>get</tt> this method returns not a table but a list of non-empty strings.
--- @param ... locator and/or filters
--- @usage <tt>x,y,z = field:values()</tt> 
--- @usage <tt>n = field:values('a',patternfilter('^%d+$'))</tt>
--- @see PicaField:all
--- @see PicaField:get
-function PicaField:values( ... )
-    return unpack( self:all( ... ) )
+    local list = self:getFlagged( '*', code, ... )
+    return unpack( list )
 end
 
 -- Returns an ordered table of subfield values.
--- @return values possibly empty table of values
--- @return errors either nil or a list of error messages
+-- @return values - possibly empty table of values
+-- @return msg - either nil or an error message
 function PicaField:get( locator, ... )
     if type(locator) == "nil" then
         return { unpack( self ) } -- return a table copy
@@ -331,15 +313,15 @@ function PicaField:get( locator, ... )
     local _,_,sf,flag,str = locator:find("^_?([a-zA-Z0-9])([!%+%?%*]?)(_?)$")
     assert( sf, "invalid subfield locator: "..locator )
 
-    local list,errors = {}
+    local list, err = {}
     local vpos = rawget(self,'readonly').codes[sf]
 
     if not vpos then -- no such subfield value
         if flag == "!" or flag == "+" then
-            errors = { "subfield "..sf.." not found" }
+            err = "subfield "..sf.." not found"
         end -- else: no error but empty list
     elseif flag == "!" and #vpos > 1 then
-        errors = { "subfield "..sf.." is repeated" }
+        err = "subfield "..sf.." is repeated"
     elseif flag == "?" then
         list = { filtervalue( self[vpos[1]], ...) }
     else -- "*" or "+" or ""
@@ -351,7 +333,7 @@ function PicaField:get( locator, ... )
             end
         end
         if m == "+" and #list == 0 then
-            errors = { "subfield "..sf.." not found" }
+            err = "subfield "..sf.." not found"
         end
     end
 
@@ -359,35 +341,47 @@ function PicaField:get( locator, ... )
         list = {""} 
     end
 
-    return list, errors
+    return list, err
 end
 
---- Concatenate table of subfield values.
--- TODO: check this and compare with :values :map etc.
+
+-- Query multiple subfield values.
+-- Note that the returned array may be sparse!
 -- @see PicaField:get
 -- @see PicaField:join
-function PicaField:collect( ... )
-    local values, errors = {}, {}
-
-    local a
-    for _,a in ipairs(arg) do
-        local v, e, x
-        if type(a) == "table" then
-            v, e = self:get( unpack(a) )
+function PicaField:map( map )
+    local values, errors, key, query = {}, {}
+    for key,query in pairs(map) do
+        local v, err, x, flag
+        if type(query) == "table" then
+            flag = query[1]
+            v, err = self:getFlagged( '?', unpack(query) )
         else
-            v, e = self:get( a )
+            flag = query
+            v, err = self:getFlagged( '?', query )
         end
-        if e then table.append(errors,e) end
-        table.append(values,v)
+        if err then errors[key] = err end
+        if #v > 0 then
+            if type(flag) == "string" and #v == 1 and not flag:find("[*+]") then
+                v = v[1]
+            end
+            values[key] = v
+        end
     end
 
     return values, ( next(errors) and errors or nil )
 end
 
---- Collect and join subfield values.
--- @see PicaField:collect
-function PicaField:join( sep, ... )
-    return table.concat( self:collect( ... ), sep )
+--- Concatenate table of subfield values.
+function PicaField:join( sep, map )
+    local values, errors = self:map( map )
+    local condense = {}
+    for key,_ in pairs(map) do
+        if values[key] then
+            table.insert( condense, values[key]  )
+        end
+    end
+    return table.concat( condense, sep )
 end
 
 --- Returns an ordered table of subfield codes.
@@ -408,7 +402,7 @@ end
 -- returns the whole field as string in readable PICA+ format.
 function PicaField:__tostring()
     local f,t,c,v = self.full,{''};
-    if #self == 0 then 
+    if #self == 0 then
         return f
     elseif f ~= '' then
         t[1] = ' '
@@ -659,7 +653,7 @@ function PicaRecord:all( field, subfield, ... )
         else 
             for n,f in pairs( fields ) do
                 if check_occ(f) then
-                    local values = f:all(sf)
+                    local values = f:get(sf)
                     for _,v in pairs( values ) do
                         v = filtervalue( v, unpack(filters) )
                         if (v) then table.insert( result, v ) end
