@@ -54,15 +54,7 @@
 	</li>
 
 	<li>
-		<a href="../files/scripts/brief.html">scripts/brief.lua</a>
-	</li>
-
-	<li>
 		<a href="../files/scripts/ddc.html">scripts/ddc.lua</a>
-	</li>
-
-	<li>
-		<a href="../files/scripts/fcvexample1.html">scripts/fcvexample1.lua</a>
 	</li>
 
 	<li>
@@ -206,7 +198,7 @@
         
         <li>
            <a href="#PicaField:all">PicaField:all</a>
-           Returns an ordered table of all matching values 
+           Returns a list of all matching values 
         </li>
         
         <li>
@@ -217,11 +209,6 @@
         <li>
            <a href="#PicaField:codes">PicaField:codes</a>
            Returns an ordered table of subfield codes.
-        </li>
-        
-        <li>
-           <a href="#PicaField:collect">PicaField:collect</a>
-           Concatenate table of subfield values.
         </li>
         
         <li>
@@ -236,12 +223,7 @@
         
         <li>
            <a href="#PicaField:join">PicaField:join</a>
-           Collect and join subfield values.
-        </li>
-        
-        <li>
-           <a href="#PicaField:values">PicaField:values</a>
-           Returns a list of subfield values.
+           Concatenate table of subfield values.
         </li>
         
       </ul>
@@ -377,7 +359,7 @@ Creates a new PICA+ field. The newly created field will have no subfields. The o
 
 <dt><a name="PicaField:all"></a><strong>PicaField:all</strong>&nbsp;(code, ...)</dt>
 <dd>
-Returns an ordered table of all matching values
+Returns a list of all matching values
 
 
 <h3>Parameters</h3>
@@ -394,6 +376,19 @@ Returns an ordered table of all matching values
 </ul>
 
 
+
+<div>
+
+<h3>Usage</h3>
+<ul>
+	
+	<li><tt>x,y,z = field:all()</tt>
+	
+	<li><tt>n = field:all('a',patternfilter('^%d+$'))</tt>
+	
+</ul>
+
+</div>
 
 
 
@@ -461,49 +456,6 @@ Returns an ordered table of subfield codes. For instance for a field <tt>$xfoo$y
 
 
 
-
-
-</dd>
-
-
-
-
-<dt><a name="PicaField:collect"></a><strong>PicaField:collect</strong>&nbsp;(...)</dt>
-<dd>
-Concatenate table of subfield values. TODO: check this and compare with :values :map etc.
-
-
-<h3>Parameters</h3>
-<ul>
-	
-	<li>
-	  ...: 
-	</li>
-	
-</ul>
-
-
-
-
-
-
-
-<div>
-
-<h3>See also:</h3>
-<ul>
-	
-	<li><a href="">
-		PicaField:get
-	</a>
-	
-	<li><a href="">
-		PicaField:join
-	</a>
-	
-</ul>
-
-</div>
 
 
 </dd>
@@ -590,9 +542,9 @@ Returns the first value of a given subfield or an empty string.
 
 
 
-<dt><a name="PicaField:join"></a><strong>PicaField:join</strong>&nbsp;(sep, ...)</dt>
+<dt><a name="PicaField:join"></a><strong>PicaField:join</strong>&nbsp;(sep, map)</dt>
 <dd>
-Collect and join subfield values.
+Concatenate table of subfield values.
 
 
 <h3>Parameters</h3>
@@ -603,7 +555,7 @@ Collect and join subfield values.
 	</li>
 	
 	<li>
-	  ...: 
+	  map: 
 	</li>
 	
 </ul>
@@ -613,75 +565,6 @@ Collect and join subfield values.
 
 
 
-
-<div>
-
-<h3>See also:</h3>
-<ul>
-	
-	<li><a href="">
-		PicaField:collect
-	</a>
-	
-</ul>
-
-</div>
-
-
-</dd>
-
-
-
-
-<dt><a name="PicaField:values"></a><strong>PicaField:values</strong>&nbsp;(...)</dt>
-<dd>
-Returns a list of subfield values. Calling this method as <tt>field:values(...)</tt> is equivalent to calling <tt>unpack(field:all(...))</tt>. In contrast to <tt>all</tt> and <tt>get</tt> this method returns not a table but a list of non-empty strings.
-
-
-<h3>Parameters</h3>
-<ul>
-	
-	<li>
-	  ...: locator and/or filters
-	</li>
-	
-</ul>
-
-
-
-<div>
-
-<h3>Usage</h3>
-<ul>
-	
-	<li><tt>x,y,z = field:values()</tt>
-	
-	<li><tt>n = field:values('a',patternfilter('^%d+$'))</tt>
-	
-</ul>
-
-</div>
-
-
-
-
-
-<div>
-
-<h3>See also:</h3>
-<ul>
-	
-	<li><a href="">
-		PicaField:all
-	</a>
-	
-	<li><a href="">
-		PicaField:get
-	</a>
-	
-</ul>
-
-</div>
 
 
 </dd>
