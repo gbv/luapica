@@ -24,8 +24,8 @@ function TestRecord:testNew()
 
     f = r["028A"] -- get first field
     assertEquals( f.tag, "028A" )
-    assertEquals( f.num, 0 )
-    assertEquals( f.lev, 0 )
+    assertEquals( f.num, nil )
+    assertEquals( f.level, 0 )
 
     f = r:first("028C/01")
     assertEquals( f.tag, "028C" )
@@ -68,7 +68,7 @@ function TestRecord:testFirst()
     assertEquals( f['9'], '105543004' )
 
     f = record:first('041A/09')
-    assertEquals( f['9'], '' )
+    assert( not f['9'] )
     assertEquals( f.A, 'DE-101' )
 
     for _i,loc in ipairs({'041A/00','041A/00|123A','123A|041A/00'}) do
@@ -132,12 +132,12 @@ function TestRecord:testFilter()
 
     --- filter fields
     assertEquals( #record:all( function(f) return f.tag == "041A" end), 6 )
-    assertEquals( #record:all( function(f) return f['8'] ~= '' end ), 8 )
+    assertEquals( #record:all( function(f) return f['8'] end ), 8 )
 
     r = record:all( '041A', function(f) return f.S == 's' end )
 
     assertEquals( #record:all( '041A', function(f) return f.S == 's' end ), 5 )
-    assertEquals( #record:all( '041A', function(f) return f['8']:find('41') end ), 2 )
+    assertEquals( #record:all( '041A', function(f) return f['8_']:find('41') end ), 2 )
 
     -- get field and filter it
     assertEquals( record:first('007G'):join('','c','0'), 'DNB1009068466' )
