@@ -153,7 +153,7 @@
 
   
     <dt><a name="PicaField"></a><strong>PicaField</strong></dt>
-<dd>Stores an ordered list of PICA+ subfields. This class overloads the following operators: <ul> <li><tt>#f</tt> returns the number of subfields.</li> <li><tt>f % l</tt> returns whether locator <tt>l</tt> applies to field <tt>f</tt> (see <a href="#PicaField:has">PicaField:has</a>). </ul>
+<dd>Stores an ordered list of PICA+ subfields. <tt>#f</tt> returns the number of subfields.
 
 
 <h3>Fields</h3>
@@ -164,7 +164,7 @@
         </li>
 	
 	<li>
-	  c: (string) the <i>first</i> subfield value of a subfield with code <i>c</i> where <i>c</i> can be a letter (<tt>a-z</tt> or <tt>A-Z</tt>) or a digit (<tt>0-9</tt>). An empty string is returned if no such subfields exists (see <a href="#PicaField:has">PicaField:first</a>).
+	  c: (string) the <i>first</i> subfield value of a subfield with code <i>c</i> where <i>c</i> can be a letter (<tt>a-z</tt> or <tt>A-Z</tt>) or a digit (<tt>0-9</tt>). Nil is returned if no such subfields exists.
         </li>
 	
 	<li>
@@ -232,11 +232,6 @@
         <li>
            <a href="#PicaField:first">PicaField:first</a>
            Returns the first value of a given subfield or an empty string.
-        </li>
-        
-        <li>
-           <a href="#PicaField:has">PicaField:has</a>
-           Checks whether a field contains a given subfield.
         </li>
         
         <li>
@@ -586,46 +581,6 @@ Returns the first value of a given subfield or an empty string.
 
 
 
-
-
-
-
-</dd>
-
-
-
-
-<dt><a name="PicaField:has"></a><strong>PicaField:has</strong>&nbsp;(...)</dt>
-<dd>
-Checks whether a field contains a given subfield.
-
-
-<h3>Parameters</h3>
-<ul>
-	
-	<li>
-	  ...: subfield code (one character of <tt>a-z</tt>, <tt>A-Z</tt> or <tt>0-9</tt>)
-	</li>
-	
-</ul>
-
-
-
-<div>
-
-<h3 class="inline-block">Usage:</h3>
-<tt>f:has("x")</tt> or <tt>f % "x"</tt>
-
-</div>
-
-
-
-<div>
-
-<h3 class="inline-block">Return value:</h3>
-boolean result of <tt>(self:first( subfield ) ~= "")</tt>
-
-</div>
 
 
 
