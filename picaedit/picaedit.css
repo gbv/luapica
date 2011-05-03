@@ -1,0 +1,33 @@
+body { 
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+}
+a, a:visited { color: #00C; }
+h1, h2 {
+  font-family: helvetica,arial,freesans,clean,sans-serif;
+}
+h1 { margin: 0; font-size: 130%; } /* 13.34px */
+h2 { margin: 0; font-size: 120%; }
+
+#footer {
+  font-size: 90%;
+  border-top: 1px solid #aaa;
+}
+
+.CodeMirror {
+  border: 1px solid #ddd;
+  height: auto;
+  max-height: 600px;
+  font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
+  font-size: 12px;
+}
+.CodeMirror-gutter-text {
+  background: #eee;
+  color: #aaa;
+  border-right: 1px solid #ddd;
+  padding-right: 5px;
+}
+
+/*  color: #ecedec;*/
+.error { color: red; }
+.ok { color: green; }

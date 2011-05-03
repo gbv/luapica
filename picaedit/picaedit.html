@@ -1,0 +1,226 @@
+<!doctype html>
+<html>
+  <head>
+    <title>PICA+ editor</title>
+    <link rel="stylesheet" href="codemirror.css">
+    <script src="codemirror.js"></script>
+    <link rel="stylesheet" href="pica.css">
+    <script src="pica.js"></script>
+    <link rel="stylesheet" href="picaedit.css">
+    <style type="text/css"> 
+      .searched { background: #FFFFCC; } 
+      #code span { margin-left: 0.5em; }
+      .toolbar {
+        width:100%; 
+        background: #eee;
+        color: #333;
+        margin:0; padding:0;
+        line-height: 1em;
+      }
+    </style> 
+    <script src="jquery-1.6.min.js"></script>
+<!-- emscripten: 
+    <script src="lua.js"></script>
+    <script src="luapica.js"></script>
+-->
+  </head>
+  <body>
+    <h1>PICA+ editor</h1>
+    <form>
+     <textarea id="picaedit" name="picaedit">
+003@ $0123456789
+019@ $aXA-DE
+021A $aDas @Beispiel mit $$-Zeichen
+028C/01 $dMax$aMusterfrau$9a54321$8Musterfrau, Max
+099Z $0test$1test$Atest$Ztest
+101@ $a23$cPICA
+203@/01 $09875
+101@ $a23$cPICA
+203@/99 $056321
+123X $ax
+</textarea></form>
+<!--
+001@ $0x
+204@/99 $xfoo
+This is an error
+123A This also
+123X/ $ax
+-->
+<div class="toolbar">
+    &#xA0;&#xA0;
+  Find field: 
+  <input type=text style="width: 8em" id="locator" value="003" onkeyup="locate()"> 
+  <!--<a class="undo"><img src="undo.gif"/></a/>
+  <a class="redo"><img src="redo.gif"/></a/>
+  <button type=button onclick="search()">Search</button> 
+  <input type=text style="width: 5em" id=query value=indent> -->
+  <!--button type=button onclick="locate()">locate fields</button--> 
+    &#xA0;&#xA0;
+    <tt id="code">
+      <span class="pica-tag">&#xA0;</span><span class="pica-sf">&#xA0;</span><span class="pica-value">&#xA0;</span>
+    </tt>
+</div>
+    <script>
+
+function analyzeCursor() {
+  var editor = picaedit;
+
+  var p = PICAEdit.getFromCursor(picaedit);
+  var node = document.getElementById("code");
+  
+  node.childNodes[1].setAttribute("class",p.type);
+  node.childNodes[1].firstChild.nodeValue = p.tag;
+  node.childNodes[2].firstChild.nodeValue = p.sf;
+  node.childNodes[3].firstChild.nodeValue = p.value;
+}
+
+// create PICA+ editor
+var picaedit = CodeMirror.fromTextArea(document.getElementById("picaedit"), {
+    lineNumbers: true, onCursorActivity: analyzeCursor,
+    mode: "pica"
+});
+
+// highlight fields: TODO: improve performance and also locate tags
+function locate() {
+  var editor = picaedit;
+  for (var i = 0; i < editor.lineCount(); ++i) editor.setLineClass(i,null);
+  var q = document.getElementById("locator").value;
+  if (!q) return;
+  if (PICAEdit.tagpattern.exec(q)) {
+    for (var i = 0; i < editor.lineCount(); ++i) {
+      var token = editor.getTokenAt({line:i,ch:1});
+      if (token.className="pica-tag" && token.string==q) {
+        editor.setLineClass(i,"pica-highline");
+      }
+    }
+  }
+}
+
+// search and replace
+var lastPos = null, lastQuery = null, marked = [];
+ 
+function unmark() {
+  for (var i = 0; i < marked.length; ++i) marked[i]();
+  marked.length = 0;
+}
+
+function search() {
+  unmark();                     
+  var text = document.getElementById("query").value;
+  if (!text) return;
+  for (var cursor = picaedit.getSearchCursor(text); cursor.findNext();)
+    marked.push(picaedit.markText(cursor.from(), cursor.to(), "searched"));
+ 
+  if (lastQuery != text) lastPos = null;
+  var cursor = picaedit.getSearchCursor(text, lastPos || picaedit.getCursor());
+  if (!cursor.findNext()) {
+    cursor = picaedit.getSearchCursor(text);
+    if (!cursor.findNext()) return;
+  }
+  picaedit.setSelection(cursor.from(), cursor.to());
+  lastQuery = text; lastPos = cursor.to();
+}
+
+      </script>
+
+  <h2>Lua transformation script</h2>
+  <form onsubmit="executeLua(); return false">
+    <textarea id="luaedit" name="luaedit">
+  print(record)
+  </textarea>
+  <!--input type="button" value="execute transformation" onClick="executeLua();"/-->
+  <input type="button" value="transform" onClick="executeLuaServer();"/>
+  <span id="scriptstatus" style="display:none">&#xA0;</span>
+</form>
+<form>
+ <textarea id="output">
+ </textarea>
+</form>
+<script>
+// create Lua editor
+var luaedit = CodeMirror.fromTextArea(document.getElementById("luaedit"), {
+    lineNumbers: true, //, onCursorActivity: analyzeCursor
+    mode: "text/plain"
+});
+
+// create Lua editor
+var outputedit = CodeMirror.fromTextArea(document.getElementById("output"), {
+    lineNumbers: false, mode: "text/plain", readOnly: true
+});
+
+/*
+args = ['-e', ''];
+run(args);
+
+   // print function which the Lua engine will call
+    var lines = [], printed = false;
+
+    function print(text) {
+      lines.push(text);
+      printed = true;
+    }
+
+function executeLua() {
+    var text = "";
+//    text += luapica + "\n";
+    var r = ""; // TODO: lua-escape string from picaedit.getValue();
+    text += "record = \"+r+\"\n";
+    text += luaedit.getValue();
+
+    lines = [];
+    printed = false;
+
+    raw_argv[8] = Pointer_make(intArrayFromString(text), 0, ALLOC_STATIC); // leak!
+    argv = Pointer_make(raw_argv, null);
+    __Z7runargsP9lua_StatePPci(GLOBAL_L, argv, argc)
+
+    if (!printed) {
+      print('<small><i>(no output)</i></small>');
+    }
+
+    var element = document.getElementById('output');
+    if (!element) return; // perhaps during startup
+    outputedit.setValue( lines.join("\n") );
+}
+*/
+
+function executeLuaServer() {
+    var data = {
+        "lua" : luaedit.getValue(),
+        "pica": picaedit.getValue(),
+    };
+    $.post( 'runluapica.php', data, function( result ) {
+        if (typeof result != "object") {
+            result = { "error" : "transformation failed" };
+        }
+        if ( result.error && result.error != "" ) {
+            $("#scriptstatus").show().removeClass("ok").addClass("error");
+            $("#scriptstatus").text( result.error );
+        } else {
+            $("#scriptstatus").show().removeClass("error").addClass("ok");
+            $("#scriptstatus").text( "ok" );
+        }
+        if (!result.out) result.out = "";
+        outputedit.setValue( result.out );
+        // TODO: line number of error
+    },"json");
+}
+</script>
+  <h3>TODO</h3>
+    <ul>
+      <li>load PICA records via unAPI</li>
+      <li>show documentation for single fields</li>
+      <li>save records (via webcat or in a repository)</li>
+      <li>compare result with a stored result (test cases for transformations)</li>
+      <li>diff records</li>
+      <li>undo/redo when editing</li>
+    </ul>
+    <div id="footer">
+      <p>powered by <a href="http://codemirror.net/">CodeMirror</a> 
+      (syntax highlighting)
+      and <a href="http://jquery.com/">jQuery</a>
+      <!-- and <a href="http://emscripten.org">Emscripten</a> (browser-side Lua). -->
+      </p>
+    </div>
+  </body>
+</html>
