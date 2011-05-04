@@ -1,9 +1,9 @@
 ## implementation
 
-* allow finding /00 as occurrence in PicaRecord
 * add concatenate operator (..) for fields and records
 * maybe enhance pattern filters with http://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html
 * review on API to access fields and subfields
+* check PicaField:join on repeated subfields and sparse arrays
 
 ## documentation
 

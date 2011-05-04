@@ -36,7 +36,7 @@ function TestRecord:testNew()
     assertEquals( f.tag, "028C" )
 
     -- any occurence (required)
-    f = r["028C/00"]
+    f = r["028C/xx"]
     assertEquals( f.tag, "028C" )
 
     -- optional any occurence
@@ -49,6 +49,14 @@ function TestRecord:testNew()
 
     f = r["028A/"]
     assertEquals( f.tag, "028A" )
+
+    f = r["028C/00"]
+    assertEquals( f.tag, "" )
+   
+    r:append("028C/00 $foo$bar")
+    f = r["028C/00"]
+    assertEquals( f.full, "028C/00" )
+
 end
 
 function TestRecord:testAll()
@@ -71,7 +79,7 @@ function TestRecord:testFirst()
     assert( not f['9'] )
     assertEquals( f.A, 'DE-101' )
 
-    for _i,loc in ipairs({'041A/00','041A/00|123A','123A|041A/00'}) do
+    for _i,loc in ipairs({'041A/xx','041A/xx|123A','123A|041A/xx'}) do
         f = record:first(loc)
         assertEquals( f['9'], '106369393' )
     end
@@ -85,7 +93,7 @@ function TestRecord:testAll()
     f = record:all('041A')
     assertEquals( #f, 6 )
 
-    f = record:all('041A/00')
+    f = record:all('041A/xx')
     assertEquals( #f, 5 )
 
     -- TODO: get 041A with occ < 9
@@ -99,7 +107,7 @@ function TestRecord:testAll()
     assertEquals( #f, 1 )
     assertEquals( f[1], '510428258' )
 
-    f = record:all('041A/00','9')
+    f = record:all('041A/XX','9')
     assertEquals( #f, 4 )
 
     f = record:all('041A/','8')
@@ -146,17 +154,24 @@ end
 
 function TestRecord:testLocator()
     local r = PicaRecord.new()
+    -- illformed locators
     local locators = {"|","123A$","|123A","123A/x","123A/1","123A/123","123A$x|003@"}
     for _,loc in ipairs(locators) do
         assertError( PicaRecord.all, r, loc )
         assertError( PicaRecord.first, r, loc )
     end
     assertError( PicaRecord.all, r, "123@$x", "x" )
-    locators = {"123A/$x","001@","042Z|045Y","124B$x|003@$y"}
+    -- valid locators
+    locators = {"123A/$x"," 001@","042Z| 045Y","124B$x|003@  $y"}
     for _,loc in ipairs(locators) do
         assert( r:all(loc) )
         assert( r:first(loc) )
     end
+
+    -- locators with field and subfield
+    r = self:loadRecord('book1')
+    assertEquals( r["033A $p"], 'Aachen' )
+    assertEquals( r:first("033A$p"), 'Aachen' )
 end 
 
 function TestRecord:testGet()
@@ -172,7 +187,7 @@ function TestRecord:testMap()
     local dcrecord, errors = record:map { 
         title = {'!021A','a'},     -- must be exactely one value
         subject = {'*041A','8'},   -- optional any number of values
-        language = {'010@','a'}    -- first matching value, if any    
+        language = {'010@$a'}      -- first matching value, if any    
     }
 
     assertEquals( errors, nil )
@@ -183,7 +198,7 @@ function TestRecord:testMap()
    
     dcrecord, errors = record:map {
         a = {'041A','9'},
-        b = {'041A/00','9'},
+        b = {'041A/xx','9'},
         c = {'+041A','9'},
         d = {'*041A','9'},
         e = {'*041A/','9'},

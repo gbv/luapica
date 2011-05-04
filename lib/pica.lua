@@ -14,6 +14,7 @@
 
 -- local variables for better performance
 local string, table = string, table
+--local rawget, rawset = rawget, rawset
 
 --- Returns a filter function based on a Lua pattern.
 -- The returned filter function removes all values that do not match the
@@ -186,9 +187,6 @@ function PicaField.new( tag, occ, ... )
             if tag then
                 if occ ~= '' then
                     _,_,occ = occ:find('^/(%d%d)$')
-                    if occ == '/00' then
-                        tag,occ = '',''
-                    end
                 end
             else
                 tag,occ = '',''
@@ -283,20 +281,20 @@ function PicaField:getFlagged( default, code, ... )
     return self:get( code, ... )
 end
 
---- Returns the first value of a given subfield or an empty string.
+--- Returns the first value of a given subfield (or nil).
 -- @param ... subfield code and/or optional filters
 function PicaField:first( code, ... )
-    local list = self:getFlagged( '?', code, ... )
-    return list[1]
+    local values = self:getFlagged( '?', code, ... )
+    return values[1]
 end
 
 --- Returns a list of all matching values
 -- @param ... locator and/or filters
 -- @usage <tt>x,y,z = field:all()</tt> 
 -- @usage <tt>n = field:all('a',patternfilter('^%d+$'))</tt>
-function PicaField:all( code, ... )
-    local list = self:getFlagged( '*', code, ... )
-    return unpack( list )
+function PicaField:all( ... )
+    local values = self:get( ... )
+    return unpack( values )
 end
 
 -- Returns an ordered table of subfield values.
@@ -522,6 +520,9 @@ end
 --- Appends a field to the record.
 -- @param field PicaField object to append
 function PicaRecord:append( field )
+    if type(field) == "string" then
+        field = PicaField.new(field)
+    end
     table.insert( self, field )
     if not self.fields[ field.tag ] then
         self.fields[ field.tag ] = { }
@@ -538,13 +539,15 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
     local sfornil = type(subfield) == "string" and subfield or nil
 
     (locator.."|"):gsub("([^|]*)|", function(l) 
-        local _,_,tag,occ,sf = l:find('^(%d%d%d[A-Z@])([^$]*)(.*)')
+        local _,_,tag,occ,sf = l:find('^%s*(%d%d%d[A-Z@])([^$%s]*)%s*(.*)')
         assert( tag, "malformed field locator:" .. l)
 
         if occ == '' then
             occ = '*'
         elseif occ == '/' then
             occ = ''
+        elseif occ == '/xx' or occ == '/XX' then
+            occ = 'xx'
         elseif occ ~= '' then
             _,_,occ = occ:find('^/(%d%d)$')
             assert( occ , "occurrence must be / or /00 to /99 in locator "..l )
@@ -640,7 +643,7 @@ function PicaRecord:all( field, subfield, ... )
     local function checkfield(fields,occ,sf)
 
         local check_occ = function(f)
-            return occ == '*' or occ == f.occ or (occ == '00' and f.occ ~= '')
+            return occ == '*' or occ == f.occ or (occ == 'xx' and f.occ ~= '')
         end
 
         if wantrecord then
@@ -682,7 +685,7 @@ end
 --        or <tt>AAAA/BB</tt> or <tt>AAAA/00</tt>)
 -- @usage <tt>rec["028A/"]</tt> returns field 028A but not 028A/xx,
 --        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
---        <tt>rec["028A/00"]</tt> returns field 028A/xx but not or 028A,
+--        <tt>rec["028A/xx"]</tt> returns field 028A/xx but not or 028A,
 --        <tt>rec["028A/01"]</tt> returns field 028A/01
 function PicaRecord:first( field, subfield, ... )
     local locators, wantfield, filters 
@@ -693,12 +696,13 @@ function PicaRecord:first( field, subfield, ... )
         local field = self.fields[ tag ]
         if field then
             for n,f in pairs(field) do
-                if occ == '*' or occ == f.occ or (occ == '00' and f.occ ~= '') then
-                    if type(subfield) ~= "string" then
+                if occ == '*' or occ == f.occ or (occ == 'xx' and f.occ ~= '') then
+                    if wantfield then
                         return f -- TODO: apply filters? filterfield(f, unpack(filter))
                     else
-                        return f:first(subfield, unpack(filters))
+                        return f:first(sf, unpack(filters))
                     end
+
                 end
             end
         end

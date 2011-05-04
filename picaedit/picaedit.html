@@ -140,12 +140,34 @@ function search() {
       </script>
 
   <p>edit, copy &amp; paste <b>lua transformation script</b> 
-     (partial syntax highlighting):</p>
+     (partial syntax highlighting).
+      see <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> 
+      for help:
+  </p>
 
   <form onsubmit="executeLua(); return false">
     <textarea id="luaedit" name="luaedit">
 print(record)
-print(record["021A"].a) -- will only work if 021A exists
+print()
+print(record["021A"])
+print("PPN: "..record["003@$0"])
+
+dc, errors = record:map {
+   title    = '!021A $a',    -- must be exactely one value
+   authors  = '*028C/xx $8', -- optional any number of values
+   language = '010@$a',      -- first matching value, if any  
+   subject  = "+041A/xx $8"  -- at least one subject
+}
+print(dc.title)
+if dc.authors then
+   local authors = table.concat(dc.authors,", ")
+   print("Authors: "..authors)
+end
+if (errors) then
+   for field,msg in pairs(errors) do
+       print("ERROR: "..field.." "..msg)
+   end
+end
   </textarea>
   <p>
   <input type="button" class="button" value="transform" onClick="executeLuaServer();"/>
@@ -156,8 +178,6 @@ print(record["021A"].a) -- will only work if 021A exists
  <textarea id="output">
  </textarea>
 </form>
-<p>
-See <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> for help.
 <script>
 
 function analyzeLuaCursor() {
