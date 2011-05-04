@@ -1,0 +1,5 @@
+span.lua-stdkeyword { color: #0086B3; }
+span.lua-number     { color: #229911; }
+span.lua-comment    { color: #999988; }
+span.lua-string     { color: #a22; }
+span.lua-keyword    { color: #445588; font-weight: bold; }

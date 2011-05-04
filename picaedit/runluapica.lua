@@ -1,5 +1,5 @@
 
-local T = io.read("*all")
+local T,E = io.read("*all")
 io.flush()
 
 local write = io.write
@@ -31,14 +31,13 @@ package.loaded.package=nil
 package=nil
 require=dummy
 
-T = loadstring(T,"=input")
+T,E = loadstring(T,"=i")
 if not T then
-    error("failed to compile")
+    error(E:sub(3)) -- compilation failed
 else
     T=(function (...) return {select('#',...),...} end)(pcall(T))
     if not T[2] then
-        -- TODO: possibly clean up error message
-	error(T[3]) --#write(T[3]) E="failed to run" 
+	error(T[3]) -- runtime error 
     else
 	for i=3,T[1]+1 do write(tostring(T[i]),"\t") end
     end

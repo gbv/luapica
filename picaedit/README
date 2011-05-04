@@ -1,0 +1,51 @@
+This directory contains a browser-based editor for PICA+ records.
+
+It is based on the following external libraries:
+
+CodeMirror2: Editor with Syntax highlighting from http://codemirror.net/
+
+
+Inspired by looah (https://github.com/sk89q/looah)
+
+
+An alternative to the server-side transformation may be Emscripten:
+
+lua.js     - Lua interpreter, compiled from C to JavaScript with Emscripten
+             from http://emscripten.org
+luapica.js - luapica in JavaScript
+
+args = ['-e', ''];
+run(args);
+
+// print function which the Lua engine will call
+var lines = [], printed = false;
+
+function print(text) {
+   lines.push(text);
+   printed = true;
+}
+
+function executeLua() {
+    var text = "";
+//    text += luapica + "\n";
+    var r = ""; // TODO: lua-escape string from picaedit.getValue();
+    text += "record = \"+r+\"\n";
+    text += luaedit.getValue();
+
+    lines = [];
+    printed = false;
+
+    raw_argv[8] = Pointer_make(intArrayFromString(text), 0, ALLOC_STATIC); // leak!
+    argv = Pointer_make(raw_argv, null);
+    __Z7runargsP9lua_StatePPci(GLOBAL_L, argv, argc)
+
+    if (!printed) {
+        print('<small><i>(no output)</i></small>');
+    }
+
+    var element = document.getElementById('output');
+    if (!element) return; // perhaps during startup
+    outputedit.setValue( lines.join("\n") );
+}
+
+

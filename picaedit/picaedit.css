@@ -31,3 +31,7 @@ h2 { margin: 0; font-size: 120%; }
 /*  color: #ecedec;*/
 .error { color: red; }
 .ok { color: green; }
+
+/* Lua editor */
+.lua-errorline { background: #EE8A9E !important; }
+.lua-errormark { color: #dd1144 !important; }

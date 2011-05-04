@@ -2,10 +2,12 @@
 <html>
   <head>
     <title>PICA+ editor</title>
-    <link rel="stylesheet" href="codemirror.css">
-    <script src="codemirror.js"></script>
+    <link rel="stylesheet" href="codemirror/codemirror.css">
+    <script src="codemirror/codemirror.js"></script>
     <link rel="stylesheet" href="pica.css">
     <script src="pica.js"></script>
+    <script src="codemirror/lua.js"></script>
+    <link rel="stylesheet" href="codemirror/lua.css">
     <link rel="stylesheet" href="picaedit.css">
     <style type="text/css"> 
       .searched { background: #FFFFCC; } 
@@ -16,16 +18,26 @@
         color: #333;
         margin:0; padding:0;
         line-height: 1em;
+        font-size: 14px;
+      }
+      .button {
+        -moz-border-radius: 3px 3px 3px 3px;
+        border: 1px solid #D4D4D4;
+        color: #666666;
+        background: #eee;
+      }
+      .button:hover {
+          background: blue; color: #fff;
       }
     </style> 
     <script src="jquery-1.6.min.js"></script>
-<!-- emscripten: 
-    <script src="lua.js"></script>
-    <script src="luapica.js"></script>
--->
   </head>
   <body>
-    <h1>PICA+ editor</h1>
+    <h1>PICA+ transformation with Lua</h1>
+    <p>
+      edit, copy &amp; paste <b>PICA+ data</b> in the 
+      following field with syntax highlighting:
+    </p>
     <form>
      <textarea id="picaedit" name="picaedit">
 003@ $0123456789
@@ -49,7 +61,8 @@ This is an error
 <div class="toolbar">
     &#xA0;&#xA0;
   Find field: 
-  <input type=text style="width: 8em" id="locator" value="003" onkeyup="locate()"> 
+  <input type=text style="width: 8em" id="locator" value="003" 
+         onkeyup="locate(document.getElementById('locator').value)"> 
   <!--<a class="undo"><img src="undo.gif"/></a/>
   <a class="redo"><img src="redo.gif"/></a/>
   <button type=button onclick="search()">Search</button> 
@@ -62,8 +75,12 @@ This is an error
 </div>
     <script>
 
+//var picahighlines = [];
+
 function analyzeCursor() {
   var editor = picaedit;
+
+  //for (var i = 0; i < editor.lineCount(); ++i) editor.setLineClass(i,null);
 
   var p = PICAEdit.getFromCursor(picaedit);
   var node = document.getElementById("code");
@@ -81,10 +98,9 @@ var picaedit = CodeMirror.fromTextArea(document.getElementById("picaedit"), {
 });
 
 // highlight fields: TODO: improve performance and also locate tags
-function locate() {
+function locate(q) {
   var editor = picaedit;
   for (var i = 0; i < editor.lineCount(); ++i) editor.setLineClass(i,null);
-  var q = document.getElementById("locator").value;
   if (!q) return;
   if (PICAEdit.tagpattern.exec(q)) {
     for (var i = 0; i < editor.lineCount(); ++i) {
@@ -123,66 +139,46 @@ function search() {
 
       </script>
 
-  <h2>Lua transformation script</h2>
+  <p>edit, copy &amp; paste <b>lua transformation script</b> 
+     (partial syntax highlighting):</p>
+
   <form onsubmit="executeLua(); return false">
     <textarea id="luaedit" name="luaedit">
-  print(record)
+print(record)
+print(record["021A"].a) -- will only work if 021A exists
   </textarea>
-  <!--input type="button" value="execute transformation" onClick="executeLua();"/-->
-  <input type="button" value="transform" onClick="executeLuaServer();"/>
-  <span id="scriptstatus" style="display:none">&#xA0;</span>
+  <p>
+  <input type="button" class="button" value="transform" onClick="executeLuaServer();"/>
+  <span id="scriptstatus">&#x21E0; click to transform via lua script!</span>
+  </p>
 </form>
 <form>
  <textarea id="output">
  </textarea>
 </form>
+<p>
+See <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> for help.
 <script>
+
+function analyzeLuaCursor() {
+    var sel = luaedit.getSelection();
+    if (sel && sel.match(/^[0-2][0-9][0-9][A-Z@]$/)) {
+        locate(sel);
+    } else {
+        locate(false);
+    }
+}
 // create Lua editor
 var luaedit = CodeMirror.fromTextArea(document.getElementById("luaedit"), {
-    lineNumbers: true, //, onCursorActivity: analyzeCursor
-    mode: "text/plain"
+    lineNumbers: true, onCursorActivity: analyzeLuaCursor,
+    mode: "lua"
 });
+var errorLine;
 
 // create Lua editor
 var outputedit = CodeMirror.fromTextArea(document.getElementById("output"), {
     lineNumbers: false, mode: "text/plain", readOnly: true
 });
-
-/*
-args = ['-e', ''];
-run(args);
-
-   // print function which the Lua engine will call
-    var lines = [], printed = false;
-
-    function print(text) {
-      lines.push(text);
-      printed = true;
-    }
-
-function executeLua() {
-    var text = "";
-//    text += luapica + "\n";
-    var r = ""; // TODO: lua-escape string from picaedit.getValue();
-    text += "record = \"+r+\"\n";
-    text += luaedit.getValue();
-
-    lines = [];
-    printed = false;
-
-    raw_argv[8] = Pointer_make(intArrayFromString(text), 0, ALLOC_STATIC); // leak!
-    argv = Pointer_make(raw_argv, null);
-    __Z7runargsP9lua_StatePPci(GLOBAL_L, argv, argc)
-
-    if (!printed) {
-      print('<small><i>(no output)</i></small>');
-    }
-
-    var element = document.getElementById('output');
-    if (!element) return; // perhaps during startup
-    outputedit.setValue( lines.join("\n") );
-}
-*/
 
 function executeLuaServer() {
     var data = {
@@ -193,33 +189,34 @@ function executeLuaServer() {
         if (typeof result != "object") {
             result = { "error" : "transformation failed" };
         }
+        if (errorLine) {
+            luaedit.clearMarker(errorLine);
+            luaedit.setLineClass(errorLine,null);
+        }
         if ( result.error && result.error != "" ) {
             $("#scriptstatus").show().removeClass("ok").addClass("error");
             $("#scriptstatus").text( result.error );
+            result.line = parseInt(result.line);
+            if ( result.line > 0 ) {
+                errorLine = result.line - 1;
+                luaedit.setLineClass(errorLine, "lua-errorline");
+                luaedit.setMarker(errorLine,"","lua-errormark");
+            }
         } else {
             $("#scriptstatus").show().removeClass("error").addClass("ok");
             $("#scriptstatus").text( "ok" );
         }
         if (!result.out) result.out = "";
         outputedit.setValue( result.out );
-        // TODO: line number of error
     },"json");
 }
 </script>
-  <h3>TODO</h3>
-    <ul>
-      <li>load PICA records via unAPI</li>
-      <li>show documentation for single fields</li>
-      <li>save records (via webcat or in a repository)</li>
-      <li>compare result with a stored result (test cases for transformations)</li>
-      <li>diff records</li>
-      <li>undo/redo when editing</li>
-    </ul>
+
     <div id="footer">
       <p>powered by <a href="http://codemirror.net/">CodeMirror</a> 
       (syntax highlighting)
-      and <a href="http://jquery.com/">jQuery</a>
-      <!-- and <a href="http://emscripten.org">Emscripten</a> (browser-side Lua). -->
+      and <a href="http://jquery.com/">jQuery</a>, and
+      <a href="https://github.com/nichtich/luapica">luapica</a>
       </p>
     </div>
   </body>

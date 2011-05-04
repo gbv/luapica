@@ -1,0 +1,9 @@
+- load PICA+ records via unAPI
+- show documentation of single fields
+- editing undo/redo (already implemented in CodeMirror)
+
+- save records (via webcat or in a repository)
+- compare result with a stored result (test cases for transformations)
+- diff records
+
+- highlight PICA+ lines if a PICA+ tag is selected in a lua script

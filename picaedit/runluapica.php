@@ -1,6 +1,7 @@
 <?php
 
-$cmd = "(ulimit -t 1 ; lua runluapica.lua | head -c 8k)";
+$wrapper = "runluapica.lua";
+$cmd = "(ulimit -t 1 ; lua $wrapper | head -c 8k)";
 
 $dspec = array(
     0 => array('pipe', 'r'), // stdin
@@ -72,6 +73,11 @@ while (!feof($pipes[2])) {
 fclose($pipes[2]);
 if ( $error ) {
     # TODO: clean up the error message and adjust/extract line numbers
+    $error = substr($error,strlen($wrapper)+6);
+    $error = preg_replace('/^\d+:\s*/','',$error);
+    if (preg_match('/^\s*(\d+): (.+)/',$error,$match)) {
+        $result["line"] = $match[1];
+    }
     $result["error"] = $error;
 }
 
