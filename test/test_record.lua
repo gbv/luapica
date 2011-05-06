@@ -175,9 +175,24 @@ function TestRecord:testLocator()
 end 
 
 function TestRecord:testGet()
-    local record,f = self:loadRecord('book1')
+    local r,f = self:loadRecord('book1')
 
     assertError( PicaRecord.get, record, {} )
+
+    -- FIXME: stack overflow:
+    -- t = r:get('!008G') (!,? but not +,*)
+
+    local eki = 'DNB1009068466';
+    local t = table.concat( r:first('008G'):map{'c','0'}, '' )
+-- FIXME: stack overflow:
+    --t = r:get('!008G')
+    t = #t == 0
+--[[
+    t = record:map{
+        eki = {'007G',function(r) return "xxx" end}
+    }
+--]]
+--    assertEquals( t, eki )
 end
 
 function TestRecord:testMap()
@@ -185,9 +200,10 @@ function TestRecord:testMap()
 
      -- easy conversion from PICA+ to key-value structures
     local dcrecord, errors = record:map { 
-        title = {'!021A','a'},     -- must be exactely one value
-        subject = {'*041A','8'},   -- optional any number of values
-        language = {'010@$a'}      -- first matching value, if any    
+        title    = {'!021A','a'},     -- must be exactely one value
+        subject  = {'*041A','8'},   -- optional any number of values
+        language = {'010@$a'},      -- first matching value, if any    
+        rtype    = '?002@$0'
     }
 
     assertEquals( errors, nil )
@@ -195,7 +211,8 @@ function TestRecord:testMap()
       'Gleichspannungswandler hoher Leistungsdichte im Antriebsstrang von Kraftfahrzeugen' )
     assertEquals( dcrecord.language, 'ger' )
     assertEquals( #dcrecord.subject, 5 )
-   
+    assertEquals( dcrecord.rtype, 'Aaua' )
+
     dcrecord, errors = record:map {
         a = {'041A','9'},
         b = {'041A/xx','9'},
@@ -203,6 +220,7 @@ function TestRecord:testMap()
         d = {'*041A','9'},
         e = {'*041A/','9'},
         d = {'*041A','9'},
+        f = '?041A',
         x = {'123A','9'},
         y = {'!041A','8'},
         z = {'+123A','9'},
@@ -218,6 +236,7 @@ function TestRecord:testMap()
     assertEquals( dcrecord.y, 'Elektrofahrzeug ; SWD-ID: 41517957' )
     assertEquals( dcrecord.z, nil )
 
+    assertEquals( errors.f, 'got 6 values instead of at most one' )
     assertEquals( errors.x, nil )
     assertEquals( errors.y, 'got 5 values instead of one' )
     assertEquals( errors.z, 'not found' )

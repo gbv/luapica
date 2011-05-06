@@ -730,6 +730,12 @@ function PicaRecord:get( query, ... )
             err = 'got '..#result..' values instead of one'
         end
         result = result[1]
+    elseif m == "?" then
+        result = self:all( query:sub(2), ... )
+        if #result > 1 then
+            err = 'got '..#result..' values instead of at most one'
+        end
+        result = result[1]
     elseif m == "+" then
         result = self:all( query:sub(2), ... )
         if #result == 0 then
