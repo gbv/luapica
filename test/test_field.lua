@@ -258,10 +258,10 @@ function TestField:testFilter()
     assertEquals( f:first('g',{format="x"}), nil )
     assertEquals( f:first('g_',{format="x"}), "" )
 
-    assertEquals( f:first('d',{find="g1"}), "g1" )
-    assertEquals( f[ {'d',find="g1"} ], "g1" )
+    assertEquals( f:first('d',{match="g1"}), "g1" )
+    assertEquals( f[ {'d',match="g1"} ], "g1" )
 
-    local n = f:all('d',{find='^g'})
+    local n = f:all('d',{match='^g'})
     assertEquals( #n, 2 )
 
     f = PicaField.new("006G $0850158583")

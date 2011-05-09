@@ -1,20 +1,24 @@
 -----------------------------------------------------------------------------
 -- Handle PICA+ data in Lua.
+--
 -- This module provides two classes (<a href="#PicaField">PicaField</a> and
--- <a href="#PicaRecord">PicaRecord</a>) for PICA+ data. The programming 
--- interface of these classes is optimized for easy access and conversion
--- of PICA+ records. Have a look at the file 'example.lua' for a synopsis.
+-- <a href="#PicaRecord">PicaRecord</a>) for easy access and conversion of 
+-- PICA+ records. Have a look at the file 'example.lua' for a synopsis.
 -- 
 -- @author Jakob Voss <voss@gbv.de>
 -- @class module
 -- @name pica
--- @see PicaField
--- @see PicaRecord
 -----------------------------------------------------------------------------
 
--- local variables for better performance
+-- define local variables for better performance
 local string, table, rawset, rawget
     = string, table, rawset, rawget
+
+-----------------------------------------------------------------------------
+local function assertType(typ,value,name)
+    assert(type(value)==typ, name.." must be "..typ.." but got "..type(value))
+    return value
+end
 
 -----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields.
@@ -170,7 +174,7 @@ function PicaField:append( ... )
 
     repeat 
         local code = arg[i]
-        assert( type(code) == "string", "field data must be string, got "..type(code) )
+        assertType('string',code,'field data')
 
         if code:sub(1,1) == "$" then
             local value = ""
@@ -192,7 +196,7 @@ function PicaField:append( ... )
             i = i + 1
         else
             local value = arg[i+1]
-            assert( type(value) == "string", "subfield value must be a string" )
+            assertType('string',value,'subfield value')
             appendsubfield( code, value )
             i = i + 2
         end
@@ -215,8 +219,8 @@ end
 
 --- Returns the first value of a given subfield (or nil).
 -- @param ... subfield code and/or optional filters
-function PicaField:first( code, ... )
-    local values = self:getFlagged( '?', code, ... )
+function PicaField:first( ... )
+    local values = self:getFlagged( '?', ... )
     return values[1]
 end
 
@@ -243,9 +247,9 @@ function PicaField:get( locator, filter )
     if type(locator) == "number" then -- TODO: also in :first, :all ??
         locator = tostring(locator)
     end
-    assert( type(locator) == "string", "locator must be string, got "..type(locator) )
+    assertType('string',locator,'locator')
 
-    local _,_,sf,flag,str = locator:find("^_?([a-zA-Z0-9])([!%+%?%*]?)(_?)$")
+    local _,_,sf,flag,str = locator:find("^_?([a-zA-Z0-9])([!%+%?%*]?)(_?)%s*$")
     assert( sf, "invalid subfield locator: "..locator )
 
     local list, err = {}
@@ -287,16 +291,8 @@ function PicaField.filtered( value, filter )
     end
 
     local filters = {}
---- Returns a filter function based on a Lua pattern.
--- The returned filter function removes all values that do not match the
--- pattern. If the pattern contains a capture expression, each value is
--- replaced by the first captured value.
--- @param pattern a
---   <a href="http://www.lua.org/manual/5.1/manual.html#5.4.1">pattern</a>
--- @usage check digit: <tt>record:find(tag,sf,patternfilter('%d'))</tt> 
--- @usage extract digit: <tt>record:find(tag,sf,patternfilter('(%d)'))</tt>
-local patternfilter = function( pattern )
-    return function( value )
+    local patternfilter = function( pattern )
+        return function( value )
         local start,_,capture = value:find(pattern)
         if not start then
             return false
@@ -305,34 +301,32 @@ local patternfilter = function( pattern )
         else
             return value
         end
+        end
     end
-end
+
 
     if type(filter) == "function" then
         filters = { filter }
     elseif type(filter) == "table" then
         
-        if filter.find then
-	    local s = filter.find
-            assert( type(s) == "string", "'find' must be string, got "..type(s) )
-        
+        if filter.match then
+        local s = filter.match
+            local s = assertType('string',filter.match,"match")
+
             local fun = patternfilter(s)
 
             table.insert(filters, fun) 
         end
-        -- See <a href="http://www.lua.org/manual/5.1/manual.html#5.4">string.format</a>
-        -- @usage <tt>field:first('a',{format='a is: %s'})</tt>
         if (filter.format) then
-	    local s = filter.format
-            assert( type(s) == "string", "format must be string, got "..type(s) )
+            local s = assertType('string',filter.format,"format")
             local fun = function( value )
                 return s:format( value )
             end
             table.insert(filters, fun) 
         end        
         if (filter.each) then
-            assert( type(filter.each) == "function", "'each' must be function, got "..type(filter.each) )
-            table.insert(filters, filter.each) 
+            local fun = assertType('function',filter.each,"format")
+            table.insert(filters, fun) 
         end
     end
 
@@ -485,11 +479,10 @@ PicaRecord = {
         return record:has( locator )
     end,
 
-    -- record[ key ]  
-    -- record.key
+    -- record[ key ]    or    record.key
     __index = function (record,key)
-    	if type(key) == "number" then
-            return record[key]
+        if type(key) == "number" then
+            return rawget(record,'fields')[key]
         elseif key:match('^%d%d%d[A-Z@]') then
             -- TODO: record:get( key ) ?
             return record:first(key) 
@@ -498,7 +491,6 @@ PicaRecord = {
         end
     end,
 
-    -- tostring( record )
     __tostring = function (record)
         local s,f,i = {},nil,nil
         for i,f in ipairs(record) do
@@ -518,7 +510,6 @@ function PicaRecord.new( str )
         return record
     elseif type(str) == "string" then
         str:gsub("[^\r\n]+", function(line)
-        -- print(line,"\n")
             local field = PicaField.new(line)
             record:append( field )
         end)
@@ -544,10 +535,23 @@ end
 --- Parses a field locator.
 -- @see PicaRecord:all
 -- @see PicaRecord:first
-function PicaRecord.parse_field_locator( locator, subfield, ... )
+function PicaRecord.parse_field_locator( locator, filter )
+
+    if type(locator) == "table" then
+        locator, filter = locator[1], locator
+    elseif type(filter) ~= "table" then
+        filter = { }
+    end
+
+    if not locator then
+        return nil,false,filter
+    end
+
     local list = {}
+
+--    if
     local wantfield = true
-    local sf_or_nil = type(subfield) == "string" and subfield or nil
+--    local sf_or_nil = type(subfield) == "string" and subfield or nil
 
     (locator.."|"):gsub("([^|]*)|", function(l) 
         local _,_,tag,occ,sf = l:find('^%s*(%d%d%d[A-Z@])([^$%s]*)%s*(.*)')
@@ -564,7 +568,7 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
             assert( occ , "occurrence must be / or /00 to /99 in locator "..l )
         end
         if sf == '' then
-            sf = sf_or_nil
+            sf = nil --sf_or_nil
         else
             _,_,sf = sf:find('^$(.+)$')
             assert( sf, "subfield must not be empty in locator "..l )
@@ -574,25 +578,30 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
         table.insert(list, {tag,occ,sf})
     end)
 
-    if wantfield then
-        wantfield = (sf_or_nil == nil)
-    else
+  --  if wantfield then
+  --      wantfield = (sf_or_nil == nil)
+  --  else
+    if not wantfield then
         for _,t in ipairs(list) do
             assert( #t == 3, "field and subfield locators are mixed in "..locator )
         end
-        if sf_or_nil then
-            error("subfield in locator "..locator.." and as parameter "..subfield )
-        end
+        --if sf_or_nil then
+        --    error("subfield in locator "..locator.." and as parameter "..subfield )
+        --end
     end
 
+
     if wantfield then
-        return list, wantfield, {subfield,...}
+        return list, wantfield, filter --{subfield,...}
     else
-        return list, wantfield, {...}
+        return list, wantfield, filter --{...}
     end
 end
 
 --- Apply one or more function to each field of the record.
+
+-- TODO: == record:all({each=...})
+
 -- In contrast to PicaRecord:filter, the return values of functions are ignored
 -- and nothing is returned.
 -- @param ... functions that are called for each field
@@ -621,26 +630,8 @@ end
 -- @usage r:all('021A')
 -- @see PicaRecord:apply
 function PicaRecord:all( field, subfield, ... )
+
     local locators, wantrecord, filters, result
-
-    local function append_field(field)
-        for _,f in ipairs(filters) do
-            if not f(field) then
-                return
-            end
-        end
-        result:append(field)
-    end
-
-    -- filter all fields
-    if type(field) ~= "string" then
-        filters = {field, subfield, ...}
-        result = PicaRecord.new()
-        for _,field in ipairs(self) do
-            append_field(field)
-        end
-        return result
-    end
 
     locators, wantrecord, filters 
         = self.parse_field_locator( field, subfield, ... )
@@ -651,40 +642,55 @@ function PicaRecord:all( field, subfield, ... )
         result = { }
     end
 
-    local function checkfield(fields,occ,sf)
-
-        local check_occ = function(f)
-            return occ == '*' or occ == f.occ or (occ == 'xx' and f.occ ~= '')
+    local function field_handler(field)
+        if (filters and filters.each) then
+           if not filters.each(field) then return end
         end
-
-        if wantrecord then
-            -- in this case, filters are ignored
-            local f
-            for _,f in ipairs( fields ) do
-                if check_occ(f) then
-                    append_field(f)
-                end
-            end
-        else 
-            for n,f in pairs( fields ) do
-                if check_occ(f) then
-                    local values = f:get(sf)
-                    for _,v in pairs( values ) do
-                        v = PicaField.filtered( v, unpack(filters) )
-                        if (v) then table.insert( result, v ) end
-                    end
-                end
+        for _,f in ipairs(filters) do
+            if not f(field) then
+                return
             end
         end
+        result:append(field)
+    end
 
+    -- filter all fields
+    if not locators then
+        for _,field in ipairs(self) do
+            field_handler(field)
+        end
+        return result
     end
 
     -- iterate over all locators
     for _,loc in ipairs(locators) do
         local tag, occ, sf = unpack(loc)
         local fields = self.fields[ tag ]
+
         if fields then
-            checkfield(fields,occ,sf)
+
+        local check_occ = function(f)
+            return occ == '*' or occ == f.occ or (occ == 'xx' and f.occ ~= '')
+        end
+        if wantrecord then
+            local f
+            for _,f in ipairs( fields ) do
+                if check_occ(f) then
+                    field_handler(f)
+                end
+            end
+        else 
+            for n,f in pairs( fields ) do
+                if check_occ(f) then
+                    -- proceed with field
+                    filters[1] = sf 
+                    local values = f:get(filters)
+                    for _,v in pairs( values ) do
+                        if (v) then table.insert( result, v ) end
+                    end
+                end
+            end
+        end
         end
     end
 
@@ -699,10 +705,18 @@ end
 --        <tt>rec["028A"]</tt> returns field 028A or 028A/xx,
 --        <tt>rec["028A/xx"]</tt> returns field 028A/xx but not or 028A,
 --        <tt>rec["028A/01"]</tt> returns field 028A/01
-function PicaRecord:first( field, subfield, ... )
-    local locators, wantfield, filters 
-        = self.parse_field_locator( field, subfield, ... )
+function PicaRecord:first( ... )
+    local result = self:all( ... )
+-- TODO: better performance with filter value 'max=1'
 
+    if result[1] then
+        return result[1]
+    else
+        local locators, wantfield, filters 
+            = self.parse_field_locator( ... )
+        return wantfield and PicaField.new() or ''
+    end
+--[[
     for _,loc in ipairs(locators) do
         local tag, occ, sf = unpack(loc)
         local field = self.fields[ tag ]
@@ -721,6 +735,7 @@ function PicaRecord:first( field, subfield, ... )
     end
 
     return wantfield and PicaField.new() or ''
+]]
 end
 
 --- Returns whether a given locator matches.
@@ -732,64 +747,62 @@ end
 
 ---Get matching values from the record.
 -- with error checking
-function PicaRecord:get( query, ... )
+function PicaRecord:get( query, filter )
+    if type(query) == "table" then
+        query, filter = query[1], query
+    elseif type(query) == "function" then
+        query, filter = nil, {each=query}
+    end
+
+    if not query then
+        query = ""
+    end
+    assertType("string",query,"query")
+
     local result, err
-    assert( type(query) == "string" and query ~= "", "query must be a non-empty string" )
-    local m = query:sub(1,1)
+    local m = query:sub(1,1) 
+
     if m == "!" then
-        result = self:all( query:sub(2), ... )
+        result = self:all( query:sub(2), filter )
         if #result ~= 1 then
             err = 'got '..#result..' values instead of one'
         end
         result = result[1]
     elseif m == "?" then
-        result = self:all( query:sub(2), ... )
+        result = self:all( query:sub(2), filter )
         if #result > 1 then
             err = 'got '..#result..' values instead of at most one'
         end
         result = result[1]
     elseif m == "+" then
-        result = self:all( query:sub(2), ... )
+        result = self:all( query:sub(2), filter )
         if #result == 0 then
             err = 'not found'
         end
     elseif m == "*" then
-        result = self:all( query:sub(2), ... )
+        result = self:all( query:sub(2), filter )
     else
-        result = self:first( query, ... )
+        result = self:first( query, filter )
     end
     
     return result, err
 end
 
---- Transforms the record to a table using a mapping table.
+--- Transforms a PICA+ record to a key-value structure using a mapping table.
 -- @param map mapping table
 -- @see PicaRecord:get
 -- @return table of transformed values
--- @return table of errors or nil of no errors occurred
+-- @return nil (if there are no error) or non-empty table of errors
 function PicaRecord:map( map )
-    assert( type(map) == "table", "mapping table required" )
-    local result, errors = {}, {}
-    local key,pattern
-    for key,pattern in pairs(map) do
-        local value,err,ok
-        if type(pattern) == "string" then
-           value,err = self:get( pattern )
-        elseif type(pattern) == "table" then
-           value,err = self:get( unpack(pattern) )
-        elseif type(pattern) == "function" then
-            ok,value = pcall(pattern, self)
-            if not ok then
-                value,err = nil,value
-            end
-        else
-           error( "pattern must be string, table or function" )
-        end
+    assertType('table',map,'mapping table required')
+    local result, errors, key, pattern = {}, {}
+    for key, pattern in pairs(map) do
+        local value, err = self:get(pattern)
         if err then
             errors[key] = err
         end 
-        if (type(value) == "string" and value ~= "") 
-           or (type(value) == "table" and #value > 0 ) then
+        if ( type(value) == 'string' and value ~= "" ) 
+        or ( type(value) == 'table'  and #value > 0    ) then
             result[key] = value
         end
     end

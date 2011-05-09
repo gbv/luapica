@@ -100,17 +100,17 @@ function TestRecord:testAll()
 
     -- with subfield
 
-    f = record:all('041A','8')
+    f = record:all('041A $8')
     assertEquals( #f, 5 )
 
-    f = record:all('041A/02','9')
+    f = record:all('041A/02 $9')
     assertEquals( #f, 1 )
     assertEquals( f[1], '510428258' )
 
-    f = record:all('041A/XX','9')
+    f = record:all('041A/XX$9')
     assertEquals( #f, 4 )
 
-    f = record:all('041A/','8')
+    f = record:all('041A/ $8')
     assertEquals( #f, 1 )
 
     f = record:all('003@|041A')
@@ -119,58 +119,68 @@ function TestRecord:testAll()
     f = record:all('003@$0|006L$0')
     assertEquals( #f, 2 )
 
-    f = record:all('003@|006L','0')
-    assertEquals( #f, 2 )
+    --f = record:all('003@|006L $0')
+--    assertEquals( #f, 2 )
 end
 
 function TestRecord:testFilter()
     local record = self:loadRecord('book1')
 
-    -- print all matching subfields
-    -- record:all('041A','8',{each=print})
-    assertEquals( #record:all('041A','8',{find='41'}), 2 )
+    local s,t = "",tostring(record:all('041A')).."\n"
+    local af = function(f) s = s..tostring(f).."\n" end
+    s=""; record:all('041A',{each=af}); assertEquals(s,t)
+    s=""; record:all({'041A',each=af}); assertEquals(s,t)
+    s=""; record:all('041A'):all({each=af}); assertEquals(s,t)
 
-    assertEquals( #record:all('041A','8',{find='%d%d'}), 5 )
-    assertEquals( #record:all('041A','8',function() return true end), 5 )
-    assertEquals( #record:all('041A','8',function() return false end), 0 )
-    assertEquals( #record:all('041A','8',function() return 1 end), 0 )
 
+    assertEquals( #record:all('041A$8'), 5 )
+    assertEquals( #record:all('041A$8',{match='%d%d'}), 5 )
+    assertEquals( #record:all('041A$8',{match='41'}), 2 )
+    assertEquals( #record:all({'041A$8',each=function() return true end}), 5 )
+    assertEquals( #record:all({'041A$8',each=function() return false end}), 0 )
+    assertEquals( #record:all({'041A$8',function() return 1 end}), 5 )
     local f = function() return "x" end
 
-    local list = record:all( '041A', '8', f )
+    local list = record:all( '041A$8', {each=f} )
     assertEquals( list[1], "x" )
 
-    list = record:all( '041A', '8',{find='(%d%d)'} )
+    list = record:all( '041A$8',{match='(%d%d)'} )
     assertEquals( list[1], "41" )
 
+    t = record:get('006G$0',{format="http://d-nb.info/%s"})
+    assertEquals( t,  "http://d-nb.info/1009068466" )
+
+    t = record:map{ 
+        DNB = {'006G$0',format="http://d-nb.info/%s"},
+        ISBN = {"*004A$A",format="urn:isbn:%s"},
+    }
+    assertEquals( t.DNB, "http://d-nb.info/1009068466" )
+    assertEquals( t.ISBN[1], "urn:isbn:9783832295745" )
+
     --- filter fields
-    assertEquals( #record:all( function(f) return f.tag == "041A" end), 6 )
-    assertEquals( #record:all( function(f) return f['8'] end ), 8 )
+    --assertEquals( #record:all({each=function(f) return f.tag == "041A" end}), 6 )
+--    assertEquals( #record:all(function(f) return f['8'] end}, 8 )
+--    r = record:all( '041A', function(f) return f.S == 's' end )
+--    r = record:all( '041A',{each=function(f) return f.S == 's' end})
 
-    r = record:all( '041A', function(f) return f.S == 's' end )
-
-    assertEquals( #record:all( '041A', function(f) return f.S == 's' end ), 5 )
-    assertEquals( #record:all( '041A', function(f) return f['8_']:find('41') end ), 2 )
+--    assertEquals( #record:all( '041A', function(f) return f.S == 's' end ), 5 )
+--    assertEquals( #record:all( '041A', function(f) return f['8_']:match('41') end ), 2 )
 
     -- get field and filter it
-    t = record:first('007G'):map({'c','0'})
-    assertEquals( table.concat( t, '' ), 'DNB1009068466' )
-
-
-    t = record:all('045Q','8',{find='(%d%d\.%d%d)'})
+--    t = record:first('007G'):map({'c','0'})
+--    assertEquals( table.concat( t, '' ), 'DNB1009068466' )
+--[[
+    t = record:all('045Q','8',{match='(%d%d\.%d%d)'})
     assertEquals( #t, 2 )
-
+--]]
+-- TODO: simplify calling
     t = ""
     r = PicaRecord.new("006G $0850158583")
-    r:all( '006G','0',{format="http://d-nb.info/%s",each=function(s) t = s end})
+--[[    r:all('006G',{ each=function(f) 
+            f:all({format="http://d-nb.info/%s",each=function(s) t = s end})
+        end })
     assertEquals( t, "http://d-nb.info/850158583" )
-
-    t = r:get( '006G','0',{format="http://d-nb.info/%s"})
-    assertEquals( t,  "http://d-nb.info/850158583" )
-
-    t = r:map{ DNB = {'006G','0',{format="http://d-nb.info/%s"}} }
-    assertEquals( t.DNB, "http://d-nb.info/850158583" )
-
+--]]
 end
 
 function TestRecord:testLocator()
@@ -181,7 +191,6 @@ function TestRecord:testLocator()
         assertError( PicaRecord.all, r, loc )
         assertError( PicaRecord.first, r, loc )
     end
-    assertError( PicaRecord.all, r, "123@$x", "x" )
     -- valid locators
     locators = {"123A/$x"," 001@","042Z| 045Y","124B$x|003@  $y"}
     for _,loc in ipairs(locators) do
@@ -200,13 +209,11 @@ function TestRecord:testGet()
 
     assertError( PicaRecord.get, record, {} )
 
-    -- FIXME: stack overflow:
-    -- t = r:get('!008G') (!,? but not +,*)
+    t = r:get('!008G')
+    t = r:get('?008G')
 --[[
     local eki = 'DNB1009068466';
     local t = table.concat( r:first('008G'):map{'c','0'}, '' )
--- FIXME: stack overflow:
-    --t = r:get('!008G')
 
     t,err = r:map{
         -- create string from field
@@ -229,10 +236,10 @@ function TestRecord:testMap()
 
      -- easy conversion from PICA+ to key-value structures
     local dcrecord, errors = record:map { 
-        title    = {'!021A','a'},     -- must be exactely one value
-        subject  = {'*041A','8'},   -- optional any number of values
+        title    = {'! 021A$a'},     -- must be exactely one value
+        subject  = {'* 041A$8'},   -- optional any number of values
         language = {'010@$a'},      -- first matching value, if any    
-        rtype    = '?002@$0'
+        rtype    = '? 002@$0'
     }
 
     assertEquals( errors, nil )
@@ -243,16 +250,16 @@ function TestRecord:testMap()
     assertEquals( dcrecord.rtype, 'Aaua' )
 
     dcrecord, errors = record:map {
-        a = {'041A','9'},
-        b = {'041A/xx','9'},
-        c = {'+041A','9'},
-        d = {'*041A','9'},
-        e = {'*041A/','9'},
-        d = {'*041A','9'},
+        a = {'041A$9'},
+        b = {'041A/xx$9'},
+        c = {'+041A$9'},
+        d = {'*041A$9'},
+        e = {'*041A/$9'},
+        d = {'*041A$9'},
         f = '?041A',
         x = {'123A','9'},
-        y = {'!041A','8'},
-        z = {'+123A','9'},
+        y = {'!041A$8'},
+        z = {'+123A$9'},
     }
 
     assertEquals( dcrecord.a, '105543004' )

@@ -24,7 +24,7 @@ function main(record, source)
         record = PicaRecord.new(record)  
     end
 
-    local t = record:first('002@','0')
+    local t = record:first('002@$0')
     if not t then
         return "# Type not found"
     end
@@ -57,10 +57,10 @@ function recordidentifiers(record,source)
 
 -- TODO
     -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
-    local vd17 = record:all('006Q|006W','0',{
-        find = "^[0-9]+:[0-9]+[A-Z]$", 
-        format  = "<urn:nbn:de:vd17/%s>" }
-    )
+    local vd17 = record:all( '006Q$0|006W$0',{
+        match   = "^[0-9]+:[0-9]+[A-Z]$", 
+        format  = "<urn:nbn:de:vd17/%s>" 
+    })
     table.append(ids, vd17)
 
     -- VD18 (TODO)
@@ -94,15 +94,15 @@ function bibrecord(record, ttl)
     ttl:addlink('a','dct:BibliographicResource')
 
     dc = record:map({
-       ['dc:title'] = {'021A','a'},
-       ['dct:extent'] = {'034D','a'}, -- TODO: add 034M    $aIll., graph. Darst.
+       ['dc:title'] = {'021A$a'},
+       ['dct:extent'] = {'034D$a'}, -- TODO: add 034M    $aIll., graph. Darst.
     })
 
     for key,value in pairs(dc) do
         ttl:add( key, value )
     end
 
-    ttl:add( "dct:issued", record:first('011@','a'), 'xsd:gYear' ) -- TODO: check datatype
+    ttl:add( "dct:issued", record:first('011@$a'), 'xsd:gYear' ) -- TODO: check datatype
 
     ---------------------------------------------------------------------------
     -- Sacherschließung
@@ -116,7 +116,7 @@ function bibrecord(record, ttl)
     -- 5090 = 045T *: RVK (TODO)
 
     -- 51xx = 041A : RSWK-Ketten (derzeit nicht als Kette ausgewertet)
-    local swd = record:all('041A','8',{find='D\-ID:%s*(%d+)'})
+    local swd = record:all('041A$8',{match='D\-ID:%s*(%d+)'})
     for _,swdid in ipairs(swd) do
         ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
     end
@@ -124,7 +124,7 @@ function bibrecord(record, ttl)
 
     -- 54xx = 045H : DDC-Notation
     record:all('045H',function(f)
-        local edition = f:first('e!',{find="^DDC(%d+)"})
+        local edition = f[{"e!",match="^DDC(%d+)"}]
         local notation = f["a!"]
         if edition and notation then
             local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
@@ -134,11 +134,11 @@ function bibrecord(record, ttl)
 
     -- 5010 = 045F : DDC
     record:all('045F',function(f)
-        local edition = f:first('e!',{find="^DDC(%d+)"})
-        f:all("a",function(notation)
+        local edition = f[{'e!',match="^DDC(%d+)"}]
+        f:all({"a",function(notation)
             local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
             ttl:addlink( 'dc:subject', uri )
-        end)
+        end})
     end)
 
     -- 5500 = 044A *: LoC Subject headings
@@ -149,12 +149,13 @@ function bibrecord(record, ttl)
     -- ...
 
     -- 530x = 045Q : Basisklassifikation
-    record:all('045Q','8',{find = '(%d%d\.%d%d)', each = function(notation)
+    record:all('045Q$8',{match='(%d%d\.%d%d)', each = function(notation)
         ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' ) end
         }
     )
 
     --- TODO: Digitalisat (z.B. http://nbn-resolving.org/urn:nbn:de:gbv:3:1-73723 )
+
 end
 
 --- Trim a string
@@ -189,7 +190,7 @@ function  authority_person(rec,ttl)
     ttl:addlink('a','foaf:Person')
     ttl:addlink('a','skos:Concept')
 
-    local pnd = rec:first('007S','0')
+    local pnd = rec:first('007S$0')
     if pnd == "" then
         ttl:warn("Missing PND!")
     else 
@@ -197,7 +198,7 @@ function  authority_person(rec,ttl)
         ttl:add( "dc:identifier", pnd )
     end
 
-    ttl:add( "dc:identifier", rec:first('003@','0' ))
+    ttl:add( "dc:identifier", rec:first('003@$0' ))
 
     local name = rec:first('028A'):join(' ',{
       'e','d','a','5',              -- selected subfields in this order
@@ -209,6 +210,7 @@ function  authority_person(rec,ttl)
         ttl:add("foaf:name",name) 
     end
     -- 028A $dVannevar$aBush
+
 end
 
 -------------------------------------------------------------------------------
