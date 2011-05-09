@@ -13,76 +13,8 @@
 -----------------------------------------------------------------------------
 
 -- local variables for better performance
-local string, table = string, table
---local rawget, rawset = rawget, rawset
-
---- Returns a filter function based on a Lua pattern.
--- The returned filter function removes all values that do not match the
--- pattern. If the pattern contains a capture expression, each value is
--- replaced by the first captured value.
--- @param pattern a
---   <a href="http://www.lua.org/manual/5.1/manual.html#5.4.1">pattern</a>
--- @usage check digit: <tt>record:find(tag,sf,patternfilter('%d'))</tt> 
--- @usage extract digit: <tt>record:find(tag,sf,patternfilter('(%d)'))</tt>
-patternfilter = function( pattern )
-    assert( type(pattern) == "string", "pattern must be string, got "..type(pattern) )
-    return function( value )
-        local start,_,capture = value:find(pattern)
-        if not start then
-            return false
-        elseif capture then
-            return capture
-        else
-            return value
-        end
-    end
-end
-
---- Returns a filter function based on a Lua string format.
--- @param format as specified for
---   <a href="http://www.lua.org/manual/5.1/manual.html#5.4">string.format</a>
--- @usage <tt>field:first('a',formatfilter('a is: %s'))</tt>
-formatfilter = function( format )
-    assert( type(format) == "string", "format must be string, got "..type(format) )
-    return function( value )
-        return format:format( value )
-    end
-end
-
---- Insert all values with integer keys from one table to another.
--- @param t the table to modify
--- @param a the table to concat to table a
-table.append = function( t, a )
-    local v
-    for _,v in ipairs(a) do
-        table.insert( t, v )
-    end
-end
-
---- Returns a string or nil if the string is empty
-string.notempty = function(self)
-    return #self == 0 and nil or self
-end
-
------------------------------------------------------------------------------
---- Simply returns a value, optionally filtered by one or more functions.
--- If a filter function returns true, the original value is returned.
--- If a filter function returns no string or the empty string, nil is returned.
-local function filtervalue( value, ... )
-    local filter
-    for _,filter in ipairs(arg) do
-        local v = filter(value)
-        if type(v) == "string" then
-            if v == "" then 
-                return
-            end
-            value = v
-        elseif not v or type(v) ~= "boolean" then
-            return
-        end
-    end
-    return value
-end
+local string, table, rawset, rawget
+    = string, table, rawset, rawget
 
 -----------------------------------------------------------------------------
 --- Stores an ordered list of PICA+ subfields.
@@ -291,7 +223,7 @@ end
 --- Returns a list of all matching values
 -- @param ... locator and/or filters
 -- @usage <tt>x,y,z = field:all()</tt> 
--- @usage <tt>n = field:all('a',patternfilter('^%d+$'))</tt>
+-- @usage <tt>n = field:all({'a',pattern='^%d+$'})</tt>
 function PicaField:all( ... )
     local values = self:get( ... )
     return unpack( values )
@@ -300,10 +232,15 @@ end
 -- Returns an ordered table of subfield values.
 -- @return values - possibly empty table of values
 -- @return msg - either nil or an error message
-function PicaField:get( locator, ... )
-    if type(locator) == "nil" then
+function PicaField:get( locator, filter )
+    if type(locator) == "table" then
+        locator, filter = locator[1], locator
+    end
+    if not locator then
         return { unpack( self ) } -- return a table copy
-    elseif type(locator) == "number" then -- TODO: also in :first, :all ??
+    end
+
+    if type(locator) == "number" then -- TODO: also in :first, :all ??
         locator = tostring(locator)
     end
     assert( type(locator) == "string", "locator must be string, got "..type(locator) )
@@ -321,11 +258,11 @@ function PicaField:get( locator, ... )
     elseif flag == "!" and #vpos > 1 then
         err = "subfield "..sf.." is repeated"
     elseif flag == "?" then
-        list = { filtervalue( self[vpos[1]], ...) }
+        list = { PicaField.filtered( self[vpos[1]], filter) }
     else -- "*" or "+" or ""
         local p
         for _,p in ipairs(vpos) do
-            local v = filtervalue( self[p], ...)
+            local v = PicaField.filtered(self[p],filter)
             if v then
                 table.insert(list,v)
             end
@@ -342,6 +279,80 @@ function PicaField:get( locator, ... )
     return list, err
 end
 
+
+-- TODO: cleanup
+function PicaField.filtered( value, filter )
+    if not (value and filter) then 
+        return value 
+    end
+
+    local filters = {}
+--- Returns a filter function based on a Lua pattern.
+-- The returned filter function removes all values that do not match the
+-- pattern. If the pattern contains a capture expression, each value is
+-- replaced by the first captured value.
+-- @param pattern a
+--   <a href="http://www.lua.org/manual/5.1/manual.html#5.4.1">pattern</a>
+-- @usage check digit: <tt>record:find(tag,sf,patternfilter('%d'))</tt> 
+-- @usage extract digit: <tt>record:find(tag,sf,patternfilter('(%d)'))</tt>
+local patternfilter = function( pattern )
+    return function( value )
+        local start,_,capture = value:find(pattern)
+        if not start then
+            return false
+        elseif capture then
+            return capture
+        else
+            return value
+        end
+    end
+end
+
+    if type(filter) == "function" then
+        filters = { filter }
+    elseif type(filter) == "table" then
+        
+        if filter.find then
+	    local s = filter.find
+            assert( type(s) == "string", "'find' must be string, got "..type(s) )
+        
+            local fun = patternfilter(s)
+
+            table.insert(filters, fun) 
+        end
+        -- See <a href="http://www.lua.org/manual/5.1/manual.html#5.4">string.format</a>
+        -- @usage <tt>field:first('a',{format='a is: %s'})</tt>
+        if (filter.format) then
+	    local s = filter.format
+            assert( type(s) == "string", "format must be string, got "..type(s) )
+            local fun = function( value )
+                return s:format( value )
+            end
+            table.insert(filters, fun) 
+        end        
+        if (filter.each) then
+            assert( type(filter.each) == "function", "'each' must be function, got "..type(filter.each) )
+            table.insert(filters, filter.each) 
+        end
+    end
+
+    -- Applies a filter chain. If a filter returns a non-empty string, the 
+    -- string becomes the current value. If a filter returns true, the current
+    -- value is kept. In other cases, the filter chain quits.
+    for _,filter in ipairs(filters) do
+        local v = filter(value)
+        if type(v) == "string" then
+            if v == "" then 
+                return
+            end
+            value = v
+        elseif not v or type(v) ~= "boolean" then
+            return
+        end
+    end
+
+    return value
+end
 
 -- Query multiple subfield values.
 -- Note that the returned array may be sparse!
@@ -536,7 +547,7 @@ end
 function PicaRecord.parse_field_locator( locator, subfield, ... )
     local list = {}
     local wantfield = true
-    local sfornil = type(subfield) == "string" and subfield or nil
+    local sf_or_nil = type(subfield) == "string" and subfield or nil
 
     (locator.."|"):gsub("([^|]*)|", function(l) 
         local _,_,tag,occ,sf = l:find('^%s*(%d%d%d[A-Z@])([^$%s]*)%s*(.*)')
@@ -553,7 +564,7 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
             assert( occ , "occurrence must be / or /00 to /99 in locator "..l )
         end
         if sf == '' then
-            sf = sfornil
+            sf = sf_or_nil
         else
             _,_,sf = sf:find('^$(.+)$')
             assert( sf, "subfield must not be empty in locator "..l )
@@ -564,12 +575,12 @@ function PicaRecord.parse_field_locator( locator, subfield, ... )
     end)
 
     if wantfield then
-        wantfield = (sfornil == nil)
+        wantfield = (sf_or_nil == nil)
     else
         for _,t in ipairs(list) do
             assert( #t == 3, "field and subfield locators are mixed in "..locator )
         end
-        if sfornil then
+        if sf_or_nil then
             error("subfield in locator "..locator.." and as parameter "..subfield )
         end
     end
@@ -647,6 +658,7 @@ function PicaRecord:all( field, subfield, ... )
         end
 
         if wantrecord then
+            -- in this case, filters are ignored
             local f
             for _,f in ipairs( fields ) do
                 if check_occ(f) then
@@ -658,7 +670,7 @@ function PicaRecord:all( field, subfield, ... )
                 if check_occ(f) then
                     local values = f:get(sf)
                     for _,v in pairs( values ) do
-                        v = filtervalue( v, unpack(filters) )
+                        v = PicaField.filtered( v, unpack(filters) )
                         if (v) then table.insert( result, v ) end
                     end
                 end
@@ -746,7 +758,7 @@ function PicaRecord:get( query, ... )
     else
         result = self:first( query, ... )
     end
-    -- TODO: check type of result - do we want to allow PicaField?
+    
     return result, err
 end
 
@@ -758,14 +770,20 @@ end
 function PicaRecord:map( map )
     assert( type(map) == "table", "mapping table required" )
     local result, errors = {}, {}
-    local key,pattern,value,err
+    local key,pattern
     for key,pattern in pairs(map) do
+        local value,err,ok
         if type(pattern) == "string" then
            value,err = self:get( pattern )
         elseif type(pattern) == "table" then
            value,err = self:get( unpack(pattern) )
+        elseif type(pattern) == "function" then
+            ok,value = pcall(pattern, self)
+            if not ok then
+                value,err = nil,value
+            end
         else
-           error( "pattern must be string or table" )
+           error( "pattern must be string, table or function" )
         end
         if err then
             errors[key] = err

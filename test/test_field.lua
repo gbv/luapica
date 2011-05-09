@@ -248,11 +248,25 @@ function TestField:testFilter()
     local f = PicaField.new('028A $dg1$dg2$ffoo')
     assertEquals( f:first('f'), "foo" )
 
-    assertEquals( f:first('f',formatfilter("")), nil )
-    assertEquals( f:first('f',formatfilter("(%s)")), "(foo)" )
-    assertEquals( f:first('f',formatfilter("x")), "x" )
-    assertEquals( f:first('g',formatfilter("x")), nil )
-    assertEquals( f:first('g_',formatfilter("x")), "" )
+    assertEquals( f:first('f',{format=""}), nil )
+
+    assertEquals( f:first('f',{format="(%s)"}), "(foo)" )
+    assertEquals( f:first({'f',format="(%s)"}), "(foo)" )
+    assertEquals( f[ {'f',format="(%s)"} ], "(foo)" )
+
+    assertEquals( f:first('f',{format="x"}), "x" )
+    assertEquals( f:first('g',{format="x"}), nil )
+    assertEquals( f:first('g_',{format="x"}), "" )
+
+    assertEquals( f:first('d',{find="g1"}), "g1" )
+    assertEquals( f[ {'d',find="g1"} ], "g1" )
+
+    local n = f:all('d',{find='^g'})
+    assertEquals( #n, 2 )
+
+    f = PicaField.new("006G $0850158583")
+    assertEquals( f[ {'0',format="http://d-nb.info/%s"} ], "http://d-nb.info/850158583" )
+
 end
 
 function TestField:testMap()

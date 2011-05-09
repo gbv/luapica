@@ -126,16 +126,21 @@ end
 function TestRecord:testFilter()
     local record = self:loadRecord('book1')
 
-    assertEquals( #record:all('041A','8',patternfilter('41')), 2 )
-    assertEquals( #record:all('041A','8',patternfilter('%d%d')), 5 )
+    -- print all matching subfields
+    -- record:all('041A','8',{each=print})
+    assertEquals( #record:all('041A','8',{find='41'}), 2 )
+
+    assertEquals( #record:all('041A','8',{find='%d%d'}), 5 )
     assertEquals( #record:all('041A','8',function() return true end), 5 )
     assertEquals( #record:all('041A','8',function() return false end), 0 )
     assertEquals( #record:all('041A','8',function() return 1 end), 0 )
 
-    local list = record:all( '041A', '8', function() return "x" end )
+    local f = function() return "x" end
+
+    local list = record:all( '041A', '8', f )
     assertEquals( list[1], "x" )
 
-    list = record:all( '041A', '8', patternfilter('(%d%d)') )
+    list = record:all( '041A', '8',{find='(%d%d)'} )
     assertEquals( list[1], "41" )
 
     --- filter fields
@@ -150,6 +155,22 @@ function TestRecord:testFilter()
     -- get field and filter it
     t = record:first('007G'):map({'c','0'})
     assertEquals( table.concat( t, '' ), 'DNB1009068466' )
+
+
+    t = record:all('045Q','8',{find='(%d%d\.%d%d)'})
+    assertEquals( #t, 2 )
+
+    t = ""
+    r = PicaRecord.new("006G $0850158583")
+    r:all( '006G','0',{format="http://d-nb.info/%s",each=function(s) t = s end})
+    assertEquals( t, "http://d-nb.info/850158583" )
+
+    t = r:get( '006G','0',{format="http://d-nb.info/%s"})
+    assertEquals( t,  "http://d-nb.info/850158583" )
+
+    t = r:map{ DNB = {'006G','0',{format="http://d-nb.info/%s"}} }
+    assertEquals( t.DNB, "http://d-nb.info/850158583" )
+
 end
 
 function TestRecord:testLocator()
@@ -175,24 +196,32 @@ function TestRecord:testLocator()
 end 
 
 function TestRecord:testGet()
-    local r,f = self:loadRecord('book1')
+    local r,f,err = self:loadRecord('book1')
 
     assertError( PicaRecord.get, record, {} )
 
     -- FIXME: stack overflow:
     -- t = r:get('!008G') (!,? but not +,*)
-
+--[[
     local eki = 'DNB1009068466';
     local t = table.concat( r:first('008G'):map{'c','0'}, '' )
 -- FIXME: stack overflow:
     --t = r:get('!008G')
-    t = #t == 0
---[[
-    t = record:map{
-        eki = {'007G',function(r) return "xxx" end}
+
+    t,err = r:map{
+        -- create string from field
+        eki = {"007G","$",function(f) return table.concat(f:map{'c','0'},'') end},
+        foo = function(r) error("bad") end,
     }
+print"---------------\n"
+local f = function() end
+local x,y,z = PicaRecord.parse_field_locator('007G',f)
+print(dump( {x,y,z} ))
+
+    assertEquals( t.eki, eki )
+  --  assertEquals( t.eki2, '')
+    assert(err.foo)
 --]]
---    assertEquals( t, eki )
 end
 
 function TestRecord:testMap()

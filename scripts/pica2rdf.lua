@@ -5,6 +5,16 @@
 
 require 'pica'
 
+--- Insert all values with integer keys from one table to another.
+-- @param t the table to modify
+-- @param a the table to concat to table a
+table.append = function( t, a )
+    local v
+    for _,v in ipairs(a) do
+        table.insert( t, v )
+    end
+end
+
 -------------------------------------------------------------------------------
 --- Main conversion
 -- @param record a single record in PICA+ format (UTF-8)
@@ -35,20 +45,21 @@ function main(record, source)
     return tostring(ttl) .. "\n# "..#ttl.." triples"
 end
 
-function recordidentifiers(record)
+function recordidentifiers(record,source)
     local ids = { }
 
     local eki = table.concat( record:first('007G'):map({'c','0'}), '' )
     if eki ~= "" then 
-        table.insert(ids, "<urn:nbn:de:eki/eki:"..eki..">" )
+        ids.eki = "<urn:nbn:de:eki/:"..eki..">"
     end
 
     -- VD16 Nummern: TODO
 
+-- TODO
     -- VD17 Nummern (incl. alte Nummern bei Zusammenführungen!)
-    local vd17 = record:all('006Q|006W','0',
-        patternfilter("^[0-9]+:[0-9]+[A-Z]$"), 
-        formatfilter("<urn:nbn:de:vd17/%s>")
+    local vd17 = record:all('006Q|006W','0',{
+        find = "^[0-9]+:[0-9]+[A-Z]$", 
+        format  = "<urn:nbn:de:vd17/%s>" }
     )
     table.append(ids, vd17)
 
@@ -105,7 +116,7 @@ function bibrecord(record, ttl)
     -- 5090 = 045T *: RVK (TODO)
 
     -- 51xx = 041A : RSWK-Ketten (derzeit nicht als Kette ausgewertet)
-    local swd = record:all('041A','8',patternfilter('D\-ID:%s*(%d+)'))
+    local swd = record:all('041A','8',{find='D\-ID:%s*(%d+)'})
     for _,swdid in ipairs(swd) do
         ttl:addlink( 'dc:subject', '<http://d-nb.info/gnd/'..swdid..'>' )
     end
@@ -113,7 +124,7 @@ function bibrecord(record, ttl)
 
     -- 54xx = 045H : DDC-Notation
     record:all('045H',function(f)
-        local edition = f:first('e!',patternfilter("^DDC(%d+)"))
+        local edition = f:first('e!',{find="^DDC(%d+)"})
         local notation = f["a!"]
         if edition and notation then
             local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
@@ -123,7 +134,7 @@ function bibrecord(record, ttl)
 
     -- 5010 = 045F : DDC
     record:all('045F',function(f)
-        local edition = f:first('e!',patternfilter("^DDC(%d+)"))
+        local edition = f:first('e!',{find="^DDC(%d+)"})
         f:all("a",function(notation)
             local uri = "<http://dewey.info/class/"..notation.."/e"..edition.."/>"
             ttl:addlink( 'dc:subject', uri )
@@ -138,9 +149,10 @@ function bibrecord(record, ttl)
     -- ...
 
     -- 530x = 045Q : Basisklassifikation
-    record:all('045Q','8',patternfilter('(%d%d\.%d%d)'),function(notation)
-        ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' )
-    end)
+    record:all('045Q','8',{find = '(%d%d\.%d%d)', each = function(notation)
+        ttl:addlink( 'dc:subject', '<http://uri.gbv.de/terminology/bk/'..notation..'>' ) end
+        }
+    )
 
     --- TODO: Digitalisat (z.B. http://nbn-resolving.org/urn:nbn:de:gbv:3:1-73723 )
 end
@@ -189,7 +201,7 @@ function  authority_person(rec,ttl)
 
     local name = rec:first('028A'):join(' ',{
       'e','d','a','5',              -- selected subfields in this order
-      { 'f', formatfilter('(%s)') } -- also with filters
+      { 'f', format='(%s)' } -- also with filters
     })
 
     if name ~= '' then

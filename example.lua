@@ -27,13 +27,14 @@
     -- use fields locators and custom filters to select fields
     gndfields = record:all('041A', function(f) return f.S == 's' end )
 
-    -- filter and transform subfield values with filters, e.g. 'patternfilter'
-    notations = record:all('045Q','8', patternfilter('(%d%d\.%d%d)') )
+    -- filter and transform subfield values with filters
+    notations = record:all('045Q','8', {find = '(%d%d\.%d%d)'} )
 
-    -- filter and transform subfield value with 'formatfilter'
+    -- filter and transform subfield value
     f = record:first('028A')
-    nametype = f:first('f',formatfilter("(%s)"))
+    nametype = f[ { 'f', format="(%s)" } ]
 
     print( f:join(' ',     -- join selected subfields, separated by space
       {'e','d','a','5',     -- collect these subfields (if given) in this order
-       { 'f', formatfilter('(%s)') } }) ) -- also with filters
+       { 'f', format='(%s)' } }) ) -- also with filters
+
