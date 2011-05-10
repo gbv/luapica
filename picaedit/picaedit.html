@@ -29,8 +29,21 @@
       .button:hover {
           background: blue; color: #fff;
       }
+      .name-textbox {
+           font-size: 12px;
+           padding: 2px;
+           border: 1px solid #DDDDDD;
+           color: #666666;
+          font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
+      }
     </style> 
-    <script src="jquery-1.6.min.js"></script>
+    <!-- jQuery and jQuery UI -->
+    <script type="text/javascript" src="jquery/jquery-latest.js"></script>
+    <script type="text/javascript" src="jquery/jquery-ui-latest.js"></script>
+    <!--script type="text/javascript" src="jquery/jquery.layout-latest.js"></script-->
+    <!--script type="text/javascript" src="jquery/debug.js"></script-->
+
+    <script type="text/javascript" src="luapicaedit.js"></script>
   </head>
   <body>
     <h1>PICA+ transformation with Lua</h1>
@@ -92,7 +105,7 @@ function analyzeCursor() {
 }
 
 // create PICA+ editor
-var picaedit = CodeMirror.fromTextArea(document.getElementById("picaedit"), {
+var picaedit = CodeMirror.fromTextArea( document.getElementById("picaedit"), {
     lineNumbers: true, onCursorActivity: analyzeCursor,
     mode: "pica"
 });
@@ -137,16 +150,37 @@ function search() {
   lastQuery = text; lastPos = cursor.to();
 }
 
+
+
       </script>
 
   <p>edit, copy &amp; paste <b>lua transformation script</b> 
      (partial syntax highlighting).
       see <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> 
-      for help:
+      and <a href="http://www.lua.org/manual/5.1/">lua reference manual</a>
+      for help.
   </p>
 
-  <form onsubmit="executeLua(); return false">
-    <textarea id="luaedit" name="luaedit">
+  <form>
+  <table>
+   <tr>
+    <th></th>
+    <!-- TODO: click and edit (rename) -->
+    <th style="text-align:left">
+      <span style="width:28px">&#xA0;</span>
+      <input type="text" class="name-textbox" id="luascript-name"/>
+      <input type="button" class="button" value="load" onClick="$('#luaedit').luaedit('loadScript');"/>
+      <input type="button" class="button" value="save" onClick="$('#luaedit').luaedit('saveScript');"/>
+    </th>
+   </tr>
+   <tr>
+    <td style="vertical-align:top">
+      <div id="scripts">&#xA0;</div>
+      <!-- saved scripts and snippets (to load and save) -->
+    </td>
+    <td style="vertical-align:top">
+      <!-- current script -->
+      <textarea id="luaedit" name="luaedit">
 print(record)
 print()
 print(record["021A"])
@@ -169,73 +203,39 @@ if (errors) then
    end
 end
   </textarea>
+    </td>
+    <td  style="vertical-align:top">
+  <textarea id="output">
+  </textarea>
+ </td>
+  </tr>
+</table>
   <p>
-  <input type="button" class="button" value="transform" onClick="executeLuaServer();"/>
+  <input type="button" class="button" value="transform" onClick="$('#luaedit').luaedit('executeScript');"/>
   <span id="scriptstatus">&#x21E0; click to transform via lua script!</span>
   </p>
 </form>
-<form>
- <textarea id="output">
- </textarea>
-</form>
+
 <script>
 
-function analyzeLuaCursor() {
-    var sel = luaedit.getSelection();
-    if (sel && sel.match(/^[0-2][0-9][0-9][A-Z@]$/)) {
-        locate(sel);
-    } else {
-        locate(false);
-    }
-}
-// create Lua editor
-var luaedit = CodeMirror.fromTextArea(document.getElementById("luaedit"), {
-    lineNumbers: true, onCursorActivity: analyzeLuaCursor,
-    mode: "lua"
-});
-var errorLine;
 
-// create Lua editor
-var outputedit = CodeMirror.fromTextArea(document.getElementById("output"), {
-    lineNumbers: false, mode: "text/plain", readOnly: true
+
+$(document).ready(function() {
+  $('#luaedit').luaedit({
+      scripts: '#scripts',
+      output: $('#output').outputview(),
+      name: '#luascript-name',
+      statusbar: '#scriptstatus',
+  });
 });
 
-function executeLuaServer() {
-    var data = {
-        "lua" : luaedit.getValue(),
-        "pica": picaedit.getValue(),
-    };
-    $.post( 'runluapica.php', data, function( result ) {
-        if (typeof result != "object") {
-            result = { "error" : "transformation failed" };
-        }
-        if (errorLine) {
-            luaedit.clearMarker(errorLine);
-            luaedit.setLineClass(errorLine,null);
-        }
-        if ( result.error && result.error != "" ) {
-            $("#scriptstatus").show().removeClass("ok").addClass("error");
-            $("#scriptstatus").text( result.error );
-            result.line = parseInt(result.line);
-            if ( result.line > 0 ) {
-                errorLine = result.line - 1;
-                luaedit.setLineClass(errorLine, "lua-errorline");
-                luaedit.setMarker(errorLine,"","lua-errormark");
-            }
-        } else {
-            $("#scriptstatus").show().removeClass("error").addClass("ok");
-            $("#scriptstatus").text( "ok" );
-        }
-        if (!result.out) result.out = "";
-        outputedit.setValue( result.out );
-    },"json");
-}
 </script>
 
     <div id="footer">
       <p>powered by <a href="http://codemirror.net/">CodeMirror</a> 
       (syntax highlighting)
-      and <a href="http://jquery.com/">jQuery</a>, and
+      <a href="http://jquery.com/">jQuery</a>, 
+      <!--a href="http://layout.jquery-dev.net/">jquery.layout.js"</a>, and-->
       <a href="https://github.com/nichtich/luapica">luapica</a>
       </p>
     </div>

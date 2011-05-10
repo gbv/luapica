@@ -3,7 +3,16 @@
 - editing undo/redo (already implemented in CodeMirror)
 
 - save records (via webcat or in a repository)
-- compare result with a stored result (test cases for transformations)
-- diff records
+  see http://stackoverflow.com/questions/552659/assigning-git-sha1s-without-git
+
+-- load/save scripts in a git repository => SHA-1
+   (for each revision: name, date, editor(?), description?, tags?: like in a wiki)
+
+-- load/save test case (pica record + expected output + description?)
+   with name?, date, editor?
+
+-- load/save test sets: lists of test cases
+
+- diff records, diff outputs
 
 - highlight PICA+ lines if a PICA+ tag is selected in a lua script

@@ -9,9 +9,8 @@ CodeMirror.defineMode("lua", function(config, parserConfig) {
     for (var i = 0; i < words.length; ++i) obj[words[i]] = true;
     return obj;
   }
-  var keywords = "and break elseif false nil not or return "
-               + "true function end if then else do "
-               + "while repeat until for in local";
+  var keywords = "and break do else elseif end false for function if "
+               + "in local nil not or repeat return then true until while";
   keywords = splitkeywords(keywords);
   var stdfunctions =
   "_G _VERSION assert collectgarbage dofile error getfenv getmetatable ipairs load loadfile loadstring module next pairs pcall print rawequal rawget rawset require select setfenv setmetatable tonumber tostring type unpack xpcall "
@@ -29,7 +28,7 @@ CodeMirror.defineMode("lua", function(config, parserConfig) {
   var indentUnit = config.indentUnit,
       multiLineStrings = parserConfig.multiLineStrings,
       $vars = parserConfig.$vars, atAnnotations = parserConfig.atAnnotations;
-  var isOperatorChar = /[+\-*&%=<>!?~|#]/;
+  var isOperatorChar = /[+\-/*%^#=~<>~#]/;
 
   function chain(stream, state, f) {
     state.tokenize = f;

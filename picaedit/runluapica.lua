@@ -5,11 +5,10 @@ io.flush()
 local write = io.write
 local dummy = function(...) return nil end
 
-
 require "pica"
 record = os.getenv("record")
 
--- TODO: catch this kind of error and exit with specific error message
+-- TODO: catch parsing error and exit with specific error message
 record = PicaRecord.new(record)
 
 source = os.getenv("source")
@@ -30,6 +29,10 @@ package.loaded.io=io
 package.loaded.package=nil
 package=nil
 require=dummy
+
+if T:match('function%s+main%s*%(') then
+   T = T .. "\nreturn main(record,source)"
+end
 
 T,E = loadstring(T,"=i")
 if not T then
