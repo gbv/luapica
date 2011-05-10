@@ -12,7 +12,7 @@ Use '-' as script to just print back the read records.
 ]])
 end
 
-function convert_input(file)
+function convert_file(file,main)
     local line = ""
     repeat
         local record = ""
@@ -26,7 +26,7 @@ function convert_input(file)
         end
         if record ~= "" then
             local result = main(record)
-            print(result,"\n")
+            print(result.."\n")
         end
     until line == nil
 end
@@ -44,9 +44,9 @@ else
         for i = 2, #arg do
             local filename = arg[i]
             local file = assert(io.open(filename,"r"))
-            convert_input(file)
+            convert_file(file,main)
         end
     else
-        convert_input(io.stdin)
+        convert_file(io.stdin,main)
     end
 end

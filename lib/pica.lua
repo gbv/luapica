@@ -508,14 +508,12 @@ function PicaRecord.new( str )
     setmetatable(record,PicaRecord)
     if str == nil then
         return record
-    elseif type(str) == "string" then
-        str:gsub("[^\r\n]+", function(line)
-            local field = PicaField.new(line)
-            record:append( field )
-        end)
-    else
-        error('can only parse string, got '..type(str))
     end
+    str = tostring(str)
+    str:gsub("[^\r\n]+", function(line)
+        local field = PicaField.new(line)
+        record:append( field )
+    end)
     return record
 end
 
