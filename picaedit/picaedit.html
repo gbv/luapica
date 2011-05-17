@@ -2,10 +2,15 @@
 <html>
   <head>
     <title>PICA+ editor</title>
-    <link rel="stylesheet" href="codemirror/codemirror.css">
-    <script src="codemirror/codemirror.js"></script>
-    <link rel="stylesheet" href="pica.css">
-    <script src="pica.js"></script>
+    <!-- jQuery and jQuery UI -->
+    <!--link type="text/css" href="picatextarea/lib/jquery-ui-1.8.12.custom.css" rel="Stylesheet" /-->   
+    <script type="text/javascript" src="picatextarea/lib/jquery-1.5.2.min.js"></script>
+    <script type="text/javascript" src="picatextarea/lib/jquery-ui-1.8.12.custom.min.js"></script>
+
+    <link rel="stylesheet" href="picatextarea/lib/codemirror.css">
+    <script src="picatextarea/lib/codemirror.js"></script>
+    <link rel="stylesheet" href="picatextarea/picatextarea.css">
+    <script src="picatextarea/picatextarea.js"></script>
     <script src="codemirror/lua.js"></script>
     <link rel="stylesheet" href="codemirror/lua.css">
     <link rel="stylesheet" href="picaedit.css">
@@ -29,19 +34,18 @@
       .button:hover {
           background: blue; color: #fff;
       }
-      .name-textbox {
+      input[type=text] {
            font-size: 12px;
            padding: 2px;
-           border: 1px solid #DDDDDD;
+           border: 1px solid #ddd;
            color: #666666;
           font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
       }
+      label {
+        font-size: 13px;
+      }
+      label:after { content: ": "; }
     </style> 
-    <!-- jQuery and jQuery UI -->
-    <script type="text/javascript" src="jquery/jquery-latest.js"></script>
-    <script type="text/javascript" src="jquery/jquery-ui-latest.js"></script>
-    <!--script type="text/javascript" src="jquery/jquery.layout-latest.js"></script-->
-    <!--script type="text/javascript" src="jquery/debug.js"></script-->
 
     <script type="text/javascript" src="luapicaedit.js"></script>
   </head>
@@ -72,87 +76,12 @@ This is an error
 123X/ $ax
 -->
 <div class="toolbar">
-    &#xA0;&#xA0;
-  Find field: 
-  <input type=text style="width: 8em" id="locator" value="003" 
-         onkeyup="locate(document.getElementById('locator').value)"> 
-  <!--<a class="undo"><img src="undo.gif"/></a/>
-  <a class="redo"><img src="redo.gif"/></a/>
-  <button type=button onclick="search()">Search</button> 
-  <input type=text style="width: 5em" id=query value=indent> -->
-  <!--button type=button onclick="locate()">locate fields</button--> 
-    &#xA0;&#xA0;
     <tt id="code">
       <span class="pica-tag">&#xA0;</span><span class="pica-sf">&#xA0;</span><span class="pica-value">&#xA0;</span>
     </tt>
 </div>
-    <script>
-
-//var picahighlines = [];
-
-function analyzeCursor() {
-  var editor = picaedit;
-
-  //for (var i = 0; i < editor.lineCount(); ++i) editor.setLineClass(i,null);
-
-  var p = PICAEdit.getFromCursor(picaedit);
-  var node = document.getElementById("code");
-  
-  node.childNodes[1].setAttribute("class",p.type);
-  node.childNodes[1].firstChild.nodeValue = p.tag;
-  node.childNodes[2].firstChild.nodeValue = p.sf;
-  node.childNodes[3].firstChild.nodeValue = p.value;
-}
-
-// create PICA+ editor
-var picaedit = CodeMirror.fromTextArea( document.getElementById("picaedit"), {
-    lineNumbers: true, onCursorActivity: analyzeCursor,
-    mode: "pica"
-});
-
-// highlight fields: TODO: improve performance and also locate tags
-function locate(q) {
-  var editor = picaedit;
-  for (var i = 0; i < editor.lineCount(); ++i) editor.setLineClass(i,null);
-  if (!q) return;
-  if (PICAEdit.tagpattern.exec(q)) {
-    for (var i = 0; i < editor.lineCount(); ++i) {
-      var token = editor.getTokenAt({line:i,ch:1});
-      if (token.className="pica-tag" && token.string==q) {
-        editor.setLineClass(i,"pica-highline");
-      }
-    }
-  }
-}
-
-// search and replace
-var lastPos = null, lastQuery = null, marked = [];
- 
-function unmark() {
-  for (var i = 0; i < marked.length; ++i) marked[i]();
-  marked.length = 0;
-}
-
-function search() {
-  unmark();                     
-  var text = document.getElementById("query").value;
-  if (!text) return;
-  for (var cursor = picaedit.getSearchCursor(text); cursor.findNext();)
-    marked.push(picaedit.markText(cursor.from(), cursor.to(), "searched"));
- 
-  if (lastQuery != text) lastPos = null;
-  var cursor = picaedit.getSearchCursor(text, lastPos || picaedit.getCursor());
-  if (!cursor.findNext()) {
-    cursor = picaedit.getSearchCursor(text);
-    if (!cursor.findNext()) return;
-  }
-  picaedit.setSelection(cursor.from(), cursor.to());
-  lastQuery = text; lastPos = cursor.to();
-}
-
-
-
-      </script>
+      <label for="pica-source">source</label>
+      <input type="text" id="pica-source"/>
 
   <p>edit, copy &amp; paste <b>lua transformation script</b> 
      (partial syntax highlighting).
@@ -168,7 +97,7 @@ function search() {
     <!-- TODO: click and edit (rename) -->
     <th style="text-align:left">
       <span style="width:28px">&#xA0;</span>
-      <input type="text" class="name-textbox" id="luascript-name"/>
+      <input type="text" id="luascript-name"/>
       <input type="button" class="button" value="load" onClick="$('#luaedit').luaedit('loadScript');"/>
       <input type="button" class="button" value="save" onClick="$('#luaedit').luaedit('saveScript');"/>
     </th>
@@ -217,24 +146,33 @@ end
 </form>
 
 <script>
-
-
-
 $(document).ready(function() {
+  var picaedit =$('#picaedit').picatextarea({ 
+    toolbar: ["undo","redo","name","load"],
+    load: function(id,callback) {
+      var url = "picatextarea/unapi-demo.php?callback=?";
+      $.getJSON( url, {id:id}, function(content) {
+        if (!content) content = { pp: "", error: "server did not respond" };
+        callback(content.pp,content.error);
+      } );
+    },
+    images: "picatextarea/img/silk/"
+  });
+
   $('#luaedit').luaedit({
       scripts: '#scripts',
       output: $('#output').outputview(),
       name: '#luascript-name',
       statusbar: '#scriptstatus',
+      picaedit: picaedit,
   });
 });
-
 </script>
 
     <div id="footer">
       <p>powered by <a href="http://codemirror.net/">CodeMirror</a> 
-      (syntax highlighting)
-      <a href="http://jquery.com/">jQuery</a>, 
+      (syntax highlighting) <a href="http://jquery.com/">jQuery</a>, 
+      <a href="http://nichtich.github.com/picatextarea/">PICA textarea</a>, and
       <!--a href="http://layout.jquery-dev.net/">jquery.layout.js"</a>, and-->
       <a href="https://github.com/nichtich/luapica">luapica</a>
       </p>

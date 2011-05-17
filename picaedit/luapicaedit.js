@@ -43,6 +43,7 @@ $.widget('ui.luaedit',{
             lineNumbers: true, mode: 'lua', 
             //onChange: function() { me.codeChanged(me); } //??
         });
+        this.picaedit = this.options.picaedit;
         this.api = this.options.api;
         this.scriptname = $(this.options.name);
         this.statusbar  = $(this.options.statusbar);
@@ -112,7 +113,7 @@ $.widget('ui.luaedit',{
         var luaedit = this.codemirror;
         var data = {
             "lua" : luaedit.getValue(),
-            "pica": picaedit.getValue(),
+            "pica": $(this.picaedit).picatextarea('getValue'),
         };
         $.post( 'runluapica.php', data, function( result ) {
             if (typeof result != "object") {

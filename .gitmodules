@@ -1,0 +1,3 @@
+[submodule "picaedit/picatextarea"]
+	path = picaedit/picatextarea
+	url = git://github.com/nichtich/picatextarea.git

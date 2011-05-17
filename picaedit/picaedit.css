@@ -15,7 +15,7 @@ h2 { margin: 0; font-size: 120%; }
 }
 
 .CodeMirror {
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   height: auto;
   max-height: 600px;
   font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
@@ -24,7 +24,7 @@ h2 { margin: 0; font-size: 120%; }
 .CodeMirror-gutter-text {
   background: #eee;
   color: #aaa;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid #ccc;
   padding-right: 5px;
 }
 
