@@ -1,7 +1,12 @@
 <?php
-
+/**
+ * Configuration file for LuaPICA bench.
+ *
+ */
 $config = array(
-  "unapi"      => "http://unapi.gbv.de/",
+
+  // this is where PICA+ records can be loaded from by 'id'
+  "unapi" => "http://unapi.gbv.de/",
 
   //
   // The repository must be writeable by www-user:
@@ -26,7 +31,7 @@ $config = array(
   //
   // A good overview how to share a git repository:
   // http://www.jedi.be/blog/2009/05/06/8-ways-to-share-your-git-repository/
-  "repository" => "../repository/",
+  "repository" => "repository/",
 );
 
 ?>

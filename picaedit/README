@@ -1,3 +1,6 @@
+LuaPICA Bench
+-------------
+
 This directory contains a browser-based editor for PICA+ records.
 
 It is based on the following external libraries:

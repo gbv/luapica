@@ -35,3 +35,23 @@ h2 { margin: 0; font-size: 120%; }
 /* Lua editor */
 .lua-errorline { background: #EE8A9E !important; }
 .lua-errormark { color: #dd1144 !important; }
+
+
+.searched { background: #FFFFCC; } 
+#code span { margin-left: 0.5em; }
+.button {
+  -moz-border-radius: 3px 3px 3px 3px;
+  border: 1px solid #D4D4D4;
+  color: #666666;
+  background: #eee;
+}
+.button:hover {
+    background: blue; color: #fff;
+}
+input[type=text] {
+           font-size: 12px;
+           border: 1px solid #ddd;
+           color: #666666;
+          font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
+}
+

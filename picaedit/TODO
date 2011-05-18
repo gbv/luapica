@@ -1,5 +1,3 @@
-- load PICA+ records via unAPI
-- show documentation of single fields
 - editing undo/redo (already implemented in CodeMirror)
 
 - save records (via webcat or in a repository)

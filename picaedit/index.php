@@ -1,60 +1,28 @@
 <!doctype html>
+<?php 
+
+require_once 'config.php';
+
+?>
 <html>
   <head>
-    <title>PICA+ editor</title>
+    <title>LuaPICA Bench</title>
     <!-- jQuery and jQuery UI -->
     <!--link type="text/css" href="picatextarea/lib/jquery-ui-1.8.12.custom.css" rel="Stylesheet" /-->   
     <script type="text/javascript" src="picatextarea/lib/jquery-1.5.2.min.js"></script>
     <script type="text/javascript" src="picatextarea/lib/jquery-ui-1.8.12.custom.min.js"></script>
-
     <link rel="stylesheet" href="picatextarea/lib/codemirror.css">
     <script src="picatextarea/lib/codemirror.js"></script>
     <link rel="stylesheet" href="picatextarea/picatextarea.css">
     <script src="picatextarea/picatextarea.js"></script>
     <script src="codemirror/lua.js"></script>
     <link rel="stylesheet" href="codemirror/lua.css">
-    <link rel="stylesheet" href="picaedit.css">
-    <style type="text/css"> 
-      .searched { background: #FFFFCC; } 
-      #code span { margin-left: 0.5em; }
-      .toolbar {
-        width:100%; 
-        background: #eee;
-        color: #333;
-        margin:0; padding:0;
-        line-height: 1em;
-        font-size: 14px;
-      }
-      .button {
-        -moz-border-radius: 3px 3px 3px 3px;
-        border: 1px solid #D4D4D4;
-        color: #666666;
-        background: #eee;
-      }
-      .button:hover {
-          background: blue; color: #fff;
-      }
-      input[type=text] {
-           font-size: 12px;
-           padding: 2px;
-           border: 1px solid #ddd;
-           color: #666666;
-          font-family: 'Bitstream Vera Sans Mono','Courier New',monospace;
-      }
-      label {
-        font-size: 13px;
-      }
-      label:after { content: ": "; }
-    </style> 
 
-    <script type="text/javascript" src="luapicaedit.js"></script>
+    <link rel="stylesheet" href="lpbench.css">
+    <script type="text/javascript" src="lpbench.js"></script>
   </head>
   <body>
-    <h1>PICA+ transformation with Lua</h1>
-    <p>
-      edit, copy &amp; paste <b>PICA+ data</b> in the 
-      following field with syntax highlighting:
-    </p>
+    <h1>LuaPICA bench</h1>
     <form>
      <textarea id="picaedit" name="picaedit">
 003@ $0123456789
@@ -75,14 +43,10 @@ This is an error
 123A This also
 123X/ $ax
 -->
-<div class="toolbar">
-    <tt id="code">
-      <span class="pica-tag">&#xA0;</span><span class="pica-sf">&#xA0;</span><span class="pica-value">&#xA0;</span>
-    </tt>
-</div>
+<!--
       <label for="pica-source">source</label>
       <input type="text" id="pica-source"/>
-
+-->
   <p>edit, copy &amp; paste <b>lua transformation script</b> 
      (partial syntax highlighting).
       see <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> 
@@ -148,13 +112,10 @@ end
 <script>
 $(document).ready(function() {
   var picaedit =$('#picaedit').picatextarea({ 
-    toolbar: ["undo","redo","name","load"],
-    load: function(id,callback) {
-      var url = "picatextarea/unapi-demo.php?callback=?";
-      $.getJSON( url, {id:id}, function(content) {
-        if (!content) content = { pp: "", error: "server did not respond" };
-        callback(content.pp,content.error);
-      } );
+    toolbar: ['undo','redo','name','load','error'],
+    load: function(callback,id) {
+      var url = "api.php?callback=?";
+      $.getJSON( url, {id:id}, callback );
     },
     images: "picatextarea/img/silk/"
   });

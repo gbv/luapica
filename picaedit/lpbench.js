@@ -79,12 +79,11 @@ $.widget('ui.luaedit',{
             }
         },'jsonp');
     },
-
     loadScript: function() {
         var codemirror = this.codemirror;
         var name   = this.scriptname.val(); // TODO: might be null or invalid
         var me     = this;
-        $.get( this.api, {action: 'getscript',name:name}, function( result ) {
+        $.get( this.api, { action:'getscript', name:name }, function( result ) {
             if( result && result.script ) {
                 codemirror.setValue( result.script );
             }
@@ -93,18 +92,16 @@ $.widget('ui.luaedit',{
             }
         },'jsonp');
     },
-
     saveScript: function() {
-        var script = this.codemirror.getValue();
-        var name   = this.scriptname.val(); // TODO: might be null or invalid
-        var me     = this;
-        $.post( this.api, {action:'savescript',name:name,script:script}, function(result) {
-            if( result && result.script ) {
-                // ...
-            }
+        var name    = this.scriptname.val(); // TODO: might be null or invalid
+        var script  = this.codemirror.getValue();
+        var me      = this;
+        $.post( this.api, {action:'savescript',script:script,name:name}, function(result) {
             if ( result.error ) {
                 me.showStatus( false, result.error );
-            }            
+            } else {  
+                // ...
+            }
             me.listScripts();
         },'jsonp');
     },
@@ -112,10 +109,10 @@ $.widget('ui.luaedit',{
         var me = this;
         var luaedit = this.codemirror;
         var data = {
-            "lua" : luaedit.getValue(),
-            "pica": $(this.picaedit).picatextarea('getValue'),
+            "value": $(this.picaedit).picatextarea('getValue'),
+            "script" : luaedit.getValue(),
         };
-        $.post( 'runluapica.php', data, function( result ) {
+        $.post( 'api.php?action=transform', data, function( result ) {
             if (typeof result != "object") {
                 result = { "error" : "transformation failed" };
             }
@@ -134,7 +131,7 @@ $.widget('ui.luaedit',{
             } else {
                 me.showStatus( true, "ok" );
             }
-            $(me.options.output).outputview('setOutput',result.out);
+            $(me.options.output).outputview('setOutput',result.result);
         },"json");
     },
 });
