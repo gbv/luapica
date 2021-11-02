@@ -1,14 +1,13 @@
-luapica
---------
-Lua library to handle PICA+ data
+# luapica
 
-Installation
-------------
-Copy the contents of the 'lib' directory (at least 'pica.lua') into a 
-location on your LUA_PATH.
+> Lua library to handle PICA+ data
 
-Synopsis
---------
+## Installation
+
+Copy the contents of the 'lib' directory (at least 'pica.lua') into a location on your LUA_PATH.
+
+## Synopsis
+
 The following script ('example.lua') shows how to use the library:
 
     require 'pica'
@@ -51,10 +50,10 @@ The following script ('example.lua') shows how to use the library:
        { 'f', format='(%s)' } }) ) -- also with filters
 
 For a more detailed tutorial have a look at the project wiki at
-  https://github.com/nichtich/luapica/wiki
+  https://github.com/gbv/luapica/wiki
 
-Examples
---------
+## Examples
+
 The file 'lib/picaconv.lua' contains a command line script to convert
 PICA+ records. The first command line argument must be a concrete lua 
 conversion script somewhere where lua can find it. The shell script 
@@ -63,16 +62,16 @@ use all conversion scripts in the 'scripts' directory like this:
 
     $ picaconv <script> <picafile>
 
-API Documentation
------------------
+## API Documentation
+
 For convenience the branch 'gh-pages' contains automatically generated
-documentation, that is published at http://nichtich.github.com/luapica
+documentation, that is published at http://gbv.github.com/luapica
 
 The API documentation is generated with LuaDoc. However, LuaDoc has
 not been updated since years. I added some patches, so you get get a
-fixed version of LuaDoc at https://github.com/nichtich/luadoc.
+fixed version of LuaDoc at https://github.com/gbv/luadoc.
 
-    $ git clone git://github.com/nichtich/luadoc.git
+    $ git clone git://github.com/gbv/luadoc.git
     $ cd luadoc
     $ make install
 
@@ -80,7 +79,7 @@ You can then generate documentation with:
 
     $ make doc 
 
-Feedback and updates
---------------------
-please visit https://github.com/nichtich/luapica
+## Feedback and updates
+
+Please visit <https://github.com/gbv/luapica>.
 

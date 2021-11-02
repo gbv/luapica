@@ -3,10 +3,10 @@ version = "0.1-1"
 description = { 
     summary = "Lua library to handle PICA+ data",
     license = "GPL3",
-    homepage = "https://github.com/nichtich/luapica"
+    homepage = "https://github.com/gbv/luapica"
 }
 source = { 
-    url = "git://github.com/nichtich/luapica.git"
+    url = "git://github.com/gbv/luapica.git"
 }
 dependencies = {
     "lua >= 5.1"

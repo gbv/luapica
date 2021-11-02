@@ -49,7 +49,7 @@ This is an error
 -->
   <p>edit, copy &amp; paste <b>lua transformation script</b> 
      (partial syntax highlighting).
-      see <a href="https://github.com/nichtich/luapica/wiki">luapica wiki</a> 
+      see <a href="https://github.com/gbv/luapica/wiki">luapica wiki</a> 
       and <a href="http://www.lua.org/manual/5.1/">lua reference manual</a>
       for help.
   </p>
@@ -133,9 +133,9 @@ $(document).ready(function() {
     <div id="footer">
       <p>powered by <a href="http://codemirror.net/">CodeMirror</a> 
       (syntax highlighting) <a href="http://jquery.com/">jQuery</a>, 
-      <a href="http://nichtich.github.com/picatextarea/">PICA textarea</a>, and
+      <a href="http://gbv.github.com/picatextarea/">PICA textarea</a>, and
       <!--a href="http://layout.jquery-dev.net/">jquery.layout.js"</a>, and-->
-      <a href="https://github.com/nichtich/luapica">luapica</a>
+      <a href="https://github.com/gbv/luapica">luapica</a>
       </p>
     </div>
   </body>
